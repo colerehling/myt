@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Your Territory</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="app">
+            <img src="banner.jpg" alt="Banner image" class="banner-image">
+            <header>
+                <h1>Your Territory</h1>
+            </header>
+
+            <div class="navbar">
+                <div class="nav-links">
+                    <a href="home.html">HOME</a>
+                    <a href="global.html">GLOBAL</a>
+                    <a href="profile.html">PROFILE</a>
+                    <a href="leaderboard.html">LEADERBOARD</a>
+                </div>
+                <div class="hamburger-menu">
+                    <button id="hamburger-button">☰</button>
+                    <div id="menu-links" class="menu-links">
+                        <a href="about.html">ABOUT</a>
+                        <a href="FAQ.html">FAQ</a>
+                        <a href="contact.html">CONTACT</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="spinner-overlay" class="spinner-overlay" style="display: none;">
+                <div class="spinner-container">
+                    <div class="spinner"></div>
+                    <div class="spinner-text">Loading...</div>
+                </div>
+            </div>
+            
+            <div id="map"></div>
+            <div id="entry-form">
+                <h2>Log Entry</h2>
+                <textarea id="entry-text" placeholder="How was your pee?" rows="4"></textarea>
+                <button id="log-entry">Log Entry</button>
+                <button id="logout">Logout</button>
+            </div>
+        </div>
+    </div>
+    <script src="home.js"></script>
+</body>
+</html>

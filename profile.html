@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Your Territory - Profile</title>
+    <link rel="stylesheet" href="styles.css"> 
+</head>
+
+<body>
+    <div id="container">
+        <div id="app">
+            <img src="banner.jpg" alt="Banner image" class="banner-image">
+            <header>
+                 <h1>Profile</h1>
+            </header>   
+
+            <div class="navbar" style="margin-bottom: 20px;">
+                <div class="nav-links">
+                    <a href="home.html">HOME</a>
+                    <a href="global.html">GLOBAL</a>
+                    <a href="profile.html">PROFILE</a>
+                    <a href="leaderboard.html">LEADERBOARD</a>
+                </div>
+                <div class="hamburger-menu">
+                    <button id="hamburger-button">☰</button>
+                    <div id="menu-links" class="menu-links">
+                        <a href="about.html">ABOUT</a>
+                        <a href="FAQ.html">FAQ</a>
+                        <a href="contact.html">CONTACT</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-container" id="profileInfo">
+                <div class="user-details" id="user-details"></div>
+                <div class="profile-stats" style="text-align: left;">
+                    <p><b>Entries Count: </b><span id="entriesCount"></span></p>
+                    <p><b>Last Entry Date: </b><span id="lastEntryDate"></span></p>
+                    <p><b>Streak: </b><span id="streak"> day(s)</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="profile.js"></script>
+</body>
+</html>
