@@ -6,19 +6,21 @@ const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const app = express();
-const PORT = 3000;
+
+// Use the dynamic port assigned by Render or fallback to 3000
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
-// MySQL Database Connection
+// PostgreSQL Database Connection
 const db = new Pool({
-    host: process.env.DB_HOST ,
-    user: process.env.DB_USER ,
-    password: process.env.DB_PASSWORD ,
-    database: process.env.DB_NAME ,
-    port: parseInt(process.env.DB_PORT, 10)
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: parseInt(process.env.DB_PORT, 10),
 });
 
 db.connect((err) => {
@@ -26,10 +28,13 @@ db.connect((err) => {
         console.error("Error connecting to the database:", err.message);
         process.exit(1);
     }
-    console.log("Connected to SQL database.");
+    console.log("Connected to PostgreSQL database.");
 });
 
-// Routes
+// Root Route - Add this to make sure you get a response at the root
+app.get("/", (req, res) => {
+    res.send("Welcome to the MYT API!");
+});
 
 // User Registration
 app.post("/api/register", async (req, res) => {
@@ -38,33 +43,33 @@ app.post("/api/register", async (req, res) => {
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        db.query("SELECT * FROM users WHERE email = ?", [email], (err, results) => {
+        db.query("SELECT * FROM users WHERE email = $1", [email], (err, results) => {
             if (err) {
                 console.error("Database error:", err.message);
                 return res.status(500).json({ success: false, message: "Internal server error." });
             }
-            if (results.length > 0) {
+            if (results.rows.length > 0) {
                 return res.status(400).json({ success: false, message: "Email already exists." });
             }
 
-        db.query("SELECT * FROM users WHERE username = ?", [username], (err, results) => {
-            if (err) {
-                console.error("Database error:", err.message);
-                return res.status(500).json({ success: false, message: "Internal server error." });
-            }
-            if (results.length > 0) {
-                return res.status(400).json({ success: false, message: "Username already exists." });
-            }
-
-            db.query("INSERT INTO users (username, password) VALUES (?, ?)", [username, hashedPassword], (err) => {
+            db.query("SELECT * FROM users WHERE username = $1", [username], (err, results) => {
                 if (err) {
                     console.error("Database error:", err.message);
                     return res.status(500).json({ success: false, message: "Internal server error." });
                 }
-                res.json({ success: true });
+                if (results.rows.length > 0) {
+                    return res.status(400).json({ success: false, message: "Username already exists." });
+                }
+
+                db.query("INSERT INTO users (username, password) VALUES ($1, $2)", [username, hashedPassword], (err) => {
+                    if (err) {
+                        console.error("Database error:", err.message);
+                        return res.status(500).json({ success: false, message: "Internal server error." });
+                    }
+                    res.json({ success: true });
+                });
             });
         });
-    });
     } catch (err) {
         console.error("Error during registration:", err.message);
         res.status(500).json({ success: false, message: "Internal server error." });
@@ -75,16 +80,16 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", (req, res) => {
     const { username, password } = req.body;
 
-    db.query("SELECT * FROM users WHERE username = ?", [username], async (err, results) => {
+    db.query("SELECT * FROM users WHERE username = $1", [username], async (err, results) => {
         if (err) {
             console.error("Database error:", err.message);
             return res.status(500).json({ success: false, message: "Internal server error." });
         }
-        if (results.length === 0) {
+        if (results.rows.length === 0) {
             return res.status(401).json({ success: false, message: "Invalid username or password." });
         }
 
-        const user = results[0];
+        const user = results.rows[0];
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (!passwordMatch) {
@@ -102,7 +107,7 @@ app.get("/api/entries", (req, res) => {
     const values = [];
 
     if (username) {
-        sql += " WHERE username = ?";
+        sql += " WHERE username = $1";
         values.push(username);
     }
 
@@ -112,7 +117,7 @@ app.get("/api/entries", (req, res) => {
             return res.status(500).json({ success: false, message: "Internal server error." });
         }
 
-        res.json({ success: true, entries: results });
+        res.json({ success: true, entries: results.rows });
     });
 });
 
@@ -126,7 +131,7 @@ app.get("/api/users", (req, res) => {
             return res.status(500).json({ success: false, message: "Internal server error." });
         }
 
-        res.json({ success: true, users: results });
+        res.json({ success: true, users: results.rows });
     });
 });
 
@@ -134,7 +139,7 @@ app.get("/api/users", (req, res) => {
 app.post("/api/entries", (req, res) => {
     const { username, text, lat, lng } = req.body;
 
-    const sql = "INSERT INTO map_entries (username, latitude, longitude, text) VALUES (?, ?, ?, ?)";
+    const sql = "INSERT INTO map_entries (username, latitude, longitude, text) VALUES ($1, $2, $3, $4)";
     const values = [username, lat, lng, text];
 
     db.query(sql, values, (err) => {
@@ -162,7 +167,7 @@ app.get("/api/leaderboard", (req, res) => {
             return res.status(500).json({ success: false, message: "Internal server error." });
         }
 
-        res.json({ success: true, leaderboard: results });
+        res.json({ success: true, leaderboard: results.rows });
     });
 });
 
