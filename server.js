@@ -1,8 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
-const mysql = require("mysql2");
+const { Pool } = require("pg");
 const cors = require("cors");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const app = express();
@@ -13,12 +13,12 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // MySQL Database Connection
-const db = mysql.createConnection({
+const db = new Pool({
     host: process.env.DB_HOST ,
     user: process.env.DB_USER ,
     password: process.env.DB_PASSWORD ,
     database: process.env.DB_NAME ,
-    port: process.env.DB_PORT
+    port: parseInt(process.env.DB_PORT, 10)
 });
 
 db.connect((err) => {
@@ -26,7 +26,7 @@ db.connect((err) => {
         console.error("Error connecting to the database:", err.message);
         process.exit(1);
     }
-    console.log("Connected to MySQL database.");
+    console.log("Connected to SQL database.");
 });
 
 // Routes
