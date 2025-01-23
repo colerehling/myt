@@ -244,14 +244,28 @@ a:hover {
     100% { transform: rotate(360deg); }
 }
 
-/* Media query for screens less than 768px wide */
-@media (max-width: 767px) {
+/* Media query for smaller screens */
+@media screen and (max-width: 767px) {
     .navbar {
+        flex-wrap: wrap;
+        justify-content: space-between;
         padding: 5px 10px;
     }
 
     .nav-links {
+        order: 3;
+        width: 100%;
+        justify-content: flex-start;
         gap: 10px;
+        margin-top: 10px;
+    }
+
+    .nav-links a {
+        font-size: 14px;
+    }
+
+    .hamburger-menu {
+        order: 2;
     }
 
     .hamburger-menu button {
@@ -260,3 +274,4 @@ a:hover {
         font-size: 20px;
     }
 }
+
