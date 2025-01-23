@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const showRegister = document.getElementById("show-register");
     const showLogin = document.getElementById("show-login");
 
-    const API_BASE_URL = "http://localhost:3000/api";
+    const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
     showRegister.addEventListener("click", () => {
         loginForm.style.display = "none";

@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const entryText = document.getElementById("entry-text");
     const mapDiv = document.getElementById("map");
 
-    const API_BASE_URL = "http://localhost:3000/api";
+    const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
     let currentUser = localStorage.getItem('currentUser');
     let map = null;
