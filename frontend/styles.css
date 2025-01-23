@@ -99,16 +99,7 @@ a:hover {
     text-align: left;
 }
 
- /* General Layout */
-.navbar {
-    display: flex; /* Use Flexbox for alignment */
-    justify-content: space-between; /* Space between links and the button */
-    align-items: center; /* Vertically center items */
-    background-color: #f8f9fa; /* Optional: Light background color */
-    padding: 10px 20px; /* Padding inside the navbar */
-}
-
-/* Navigation Bar Styles */
+/* General Layout */
 .navbar {
     display: flex;
     justify-content: space-between;
@@ -117,6 +108,7 @@ a:hover {
     padding: 10px 20px;
 }
 
+/* Navigation Bar Links */
 .nav-links {
     display: flex;
     gap: 20px;
@@ -138,118 +130,133 @@ a:hover {
 
 /* Hamburger Menu Styles */
 .hamburger-menu {
-    display: none;
+    position: relative;
+    float: right;
 }
 
-/* Media Query for Responsive Design */
-@media screen and (max-width: 768px) {
-    .nav-links {
-        display: none;
+.hamburger-menu button {
+    background-color: #fdc43f;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 24px;
+    width: 40px;
+    height: 30px;
+    text-align: center;
+    line-height: 0px;
+    border-radius: 4px; 
+}
+
+.hamburger-menu button:focus {
+    outline: none;
+}
+
+.menu-links {
+    display: none;
+    position: absolute;
+    top: 40px;
+    left: 0;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.menu-links a {
+    display: block;
+    padding: 10px 20px;
+    text-decoration: none;
+    color: #333;
+}
+
+.menu-links a:hover {
+    background-color: #f7b21e;
+}
+
+.menu-links.show {
+    display: block;
+}
+
+#user-details {
+    font-weight: bold;
+    font-size: 24px;
+}
+
+#leaderboard {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    text-align: center;
+}
+
+#leaderboard-table th, .leaderboard-table td {
+    padding: 10px 50px;
+    text-align: left;
+}
+
+.rank {
+    font-weight: bold;
+}
+
+/* Spinner */    
+.spinner-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.spinner-container {
+    background-color: #fff75e;
+    padding: 20px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #f7b21e;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+.spinner-text {
+    margin-top: 10px;
+    font-weight: bold;
+    color: #333;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Media query for screens less than 768px wide */
+@media (max-width: 767px) {
+    .navbar {
+        padding: 5px 10px;
     }
 
-    .hamburger-menu {
-        display: block;
+    .nav-links {
+        gap: 10px;
     }
 
     .hamburger-menu button {
-        background-color: #fdc43f;
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        font-size: 24px;
-        width: 40px;
-        height: 30px;
-        text-align: center;
-        line-height: 0px;
-        border-radius: 4px;
-    }
-
-    .menu-links {
-        display: none;
-        position: absolute;
-        top: 50px;
-        right: 20px;
-        background-color: #fff;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    .menu-links a {
-        display: block;
-        padding: 10px 20px;
-        text-decoration: none;
-        color: #333;
-    }
-
-    .menu-links.show {
-        display: block;
+        width: 35px;
+        height: 25px;
+        font-size: 20px;
     }
 }
-
-
-    #user-details {
-        font-weight: bold;
-        font-size: 24px;
-    }
-
-    #leaderboard {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 0 auto;
-        text-align: center;
-    }
-
-    #leaderboard-table th, .leaderboard-table td {
-        padding: 10px 50px; /* Adjust the values as needed */
-        text-align: left;
-    }
-
-    .rank {
-        font-weight: bold;
-    }
-
-/* Spinner */    
-    .spinner-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999; /* Ensure it's on top of other elements */
-    }
-    
-    .spinner-container {
-        background-color: #fff75e;
-        padding: 20px;
-        border-radius: 10px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    
-    .spinner {
-        width: 40px;
-        height: 40px;
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #f7b21e;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    
-    .spinner-text {
-        margin-top: 10px;
-        font-weight: bold;
-        color: #333;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
