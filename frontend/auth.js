@@ -22,16 +22,22 @@ document.addEventListener("DOMContentLoaded", () => {
         const username = document.getElementById("reg-username").value;
         const password = document.getElementById("reg-password").value;
 
-    // Validate username length
-         if (username.length < 4 || username.length > 30) {
-        alert("Username must be between 4 and 30 characters long.");
-        return;
-         }
+        // Validate fields before sending
+        if (!email || !username || !password) {
+            alert("All fields are required.");
+            return;
+        }
 
-    // Validate password length
+        // Validate username length
+        if (username.length < 4 || username.length > 30) {
+            alert("Username must be between 4 and 30 characters long.");
+            return;
+        }
+
+        // Validate password length
         if (password.length < 8 || password.length > 30) {
-        alert("Password must be between 8 and 30 characters long.");
-        return;
+            alert("Password must be between 8 and 30 characters long.");
+            return;
         }
 
         try {

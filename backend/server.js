@@ -40,9 +40,30 @@ app.get("/", (req, res) => {
 app.post("/api/register", async (req, res) => {
     const { email, username, password } = req.body;
 
+    // Validate fields
+    if (!email || !username || !password) {
+        return res.status(400).json({ success: false, message: "All fields are required." });
+    }
+
+    // Validate email format
+    const emailRegex = /\S+@\S+\.\S+/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ success: false, message: "Please provide a valid email address." });
+    }
+
+    // Validate username and password length
+    if (username.length < 4 || username.length > 30) {
+        return res.status(400).json({ success: false, message: "Username must be between 4 and 30 characters long." });
+    }
+
+    if (password.length < 8 || password.length > 30) {
+        return res.status(400).json({ success: false, message: "Password must be between 8 and 30 characters long." });
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // Check if email already exists
         db.query("SELECT * FROM users WHERE email = $1", [email], (err, results) => {
             if (err) {
                 console.error("Database error:", err.message);
@@ -52,6 +73,7 @@ app.post("/api/register", async (req, res) => {
                 return res.status(400).json({ success: false, message: "Email already exists." });
             }
 
+            // Check if username already exists
             db.query("SELECT * FROM users WHERE username = $1", [username], (err, results) => {
                 if (err) {
                     console.error("Database error:", err.message);
@@ -61,12 +83,13 @@ app.post("/api/register", async (req, res) => {
                     return res.status(400).json({ success: false, message: "Username already exists." });
                 }
 
-                db.query("INSERT INTO users (username, password) VALUES ($1, $2)", [username, hashedPassword], (err) => {
+                // Insert new user into database
+                db.query("INSERT INTO users (email, username, password) VALUES ($1, $2, $3)", [email, username, hashedPassword], (err) => {
                     if (err) {
                         console.error("Database error:", err.message);
                         return res.status(500).json({ success: false, message: "Internal server error." });
                     }
-                    res.json({ success: true });
+                    res.json({ success: true, message: "Registration successful!" });
                 });
             });
         });
