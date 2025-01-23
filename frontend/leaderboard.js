@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function fetchLeaderboard() {
-    fetch('http://localhost:3000/api/leaderboard')
+    fetch('https://myt-27ol.onrender.com/api')
         .then(response => response.json())
         .then(data => {
             if (data.success) {

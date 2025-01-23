@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     const userDetailsDiv = document.getElementById("user-details");
     const currentUser = localStorage.getItem('currentUser');
-    const API_BASE_URL = "http://localhost:3000/api";
+    const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
     if (!currentUser) {
         // Redirect to login page if not logged in
