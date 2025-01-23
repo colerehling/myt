@@ -108,30 +108,47 @@ a:hover {
     padding: 10px 20px; /* Padding inside the navbar */
 }
 
-/* Navigation Bar Links */
+/* Navigation Bar Styles */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 10px 20px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex: 1;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #fdc43f;
+    font-size: 16px;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: #f7b21e;
+}
+
+/* Hamburger Menu Styles */
+.hamburger-menu {
+    display: none;
+}
+
+/* Media Query for Responsive Design */
+@media screen and (max-width: 768px) {
     .nav-links {
-        display: flex; /* Use Flexbox for the links */
-        gap: 20px; /* Space between each link */
-        justify-content: center;
-        flex: 1;
+        display: none;
     }
 
-    .nav-links a {
-        text-decoration: none;
-        color: #fdc43f;
-        font-size: 16px;
-        font-weight: bold;
-        transition: color 0.3s ease;
-    }
-
-    .nav-links a:hover {
-        color: #f7b21e; /* Highlight color on hover */
-    }
-
-    /* Hamburger Menu Styles */
     .hamburger-menu {
-        position: relative;
-        float: right;
+        display: block;
     }
 
     .hamburger-menu button {
@@ -140,27 +157,22 @@ a:hover {
         border: none;
         cursor: pointer;
         font-size: 24px;
-        width: 40px; /* Fixed width for the button */
-        height: 30px; /* Fixed height for the button */
-        text-align: center; /* Centers the content horizontally */
-        line-height: 0px; /* Centers the content vertically */
-        border-radius: 4px; 
-    }
-
-    .hamburger-menu button:focus {
-        outline: none;
+        width: 40px;
+        height: 30px;
+        text-align: center;
+        line-height: 0px;
+        border-radius: 4px;
     }
 
     .menu-links {
         display: none;
         position: absolute;
-        top: 40px;
-        left: 0;
+        top: 50px;
+        right: 20px;
         background-color: #fff;
         border: 1px solid #ddd;
         border-radius: 4px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
     }
 
     .menu-links a {
@@ -170,13 +182,11 @@ a:hover {
         color: #333;
     }
 
-    .menu-links a:hover {
-        background-color: #f7b21e;
-    }
-
     .menu-links.show {
         display: block;
     }
+}
+
 
     #user-details {
         font-weight: bold;
@@ -243,4 +253,3 @@ a:hover {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
-    
