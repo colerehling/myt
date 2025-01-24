@@ -107,21 +107,28 @@ app.post("/api/login", (req, res) => {
 });
 
 app.get("/api/entries", (req, res) => {
-  const { username } = req.query;
-  let sql = "SELECT * FROM map_entries";
-  const values = [];
-  if (username) {
-    sql += " WHERE username = $1";
-    values.push(username);
-  }
-  db.query(sql, values, (err, results) => {
-    if (err) {
-      console.error("Database error:", err.message);
-      return res.status(500).json({ success: false, message: "Internal server error." });
-    }
-    res.json({ success: true, entries: results.rows });
-  });
-});
+    const sql = `
+      WITH RankedEntries AS (
+        SELECT 
+          *,
+          ROW_NUMBER() OVER (
+            PARTITION BY 
+              FLOOR(latitude / 0.005), 
+              FLOOR(longitude / 0.005) 
+            ORDER BY timestamp DESC
+          ) as rn
+        FROM map_entries
+      )
+      SELECT * FROM RankedEntries WHERE rn = 1
+    `;
+    db.query(sql, (err, results) => {
+        if (err) {
+          console.error("Database error:", err.message);
+          return res.status(500).json({ success: false, message: "Internal server error." });
+        }
+        res.json({ success: true, entries: results.rows });
+      });
+    });
 
 app.post("/api/entries", async (req, res) => {
   const { username, text, lat, lng } = req.body;
