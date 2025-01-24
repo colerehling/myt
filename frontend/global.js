@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
           L.marker([entry.latitude, entry.longitude])
             .addTo(map)
             .bindPopup(
-              `${entry.username}<br>${formattedDate}<br>${entry.text}`
+              `<span class="math-inline">\{entry\.username\}<br\></span>{formattedDate}<br>${entry.text}`
             );
         });
       } catch (err) {

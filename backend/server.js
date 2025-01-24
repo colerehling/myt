@@ -114,30 +114,43 @@ app.get("/api/users/count", async (req, res) => {
       console.error("Database error:", err.message);
       res.status(500).json({ success: false, message: "Internal server error." });
     }
-  });
+});
 
 app.get("/api/entries", (req, res) => {
-  const { username } = req.query;
-  let sql = "SELECT * FROM map_entries";
-  const values = [];
-  if (username) {
-    sql += " WHERE username = $1";
-    values.push(username);
-  }
-  db.query(sql, values, (err, results) => {
-    if (err) {
-      console.error("Database error:", err.message);
-      return res.status(500).json({ success: false, message: "Internal server error." });
+    const { username } = req.query;
+    let sql = `
+      SELECT DISTINCT ON (square_id) *
+      FROM map_entries
+      ORDER BY square_id, timestamp DESC
+    `;
+    const values = [];
+    if (username) {
+      sql = `
+        SELECT DISTINCT ON (square_id) *
+        FROM map_entries
+        WHERE username = $1
+        ORDER BY square_id, timestamp DESC
+      `;
+      values.push(username);
     }
-    res.json({ success: true, entries: results.rows });
-  });
+    db.query(sql, values, (err, results) => {
+      if (err) {
+        console.error("Database error:", err.message);
+        return res.status(500).json({ success: false, message: "Internal server error." });
+      }
+      res.json({ success: true, entries: results.rows });
+    });
 });
 
 app.post("/api/entries", async (req, res) => {
-  const { username, text, lat, lng } = req.body;
-
-  try {
-    await db.query(
+    const { username, text, lat, lng } = req.body;
+  
+    // Calculate square_id based on latitude and longitude
+    const squareSize = 0.005;
+    const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
+  
+    try {
+      await db.query(
         `INSERT INTO square_ownership (username, square_id, latitude, longitude, timestamp)
          VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
          ON CONFLICT (square_id, username) DO UPDATE SET
@@ -146,32 +159,18 @@ app.post("/api/entries", async (req, res) => {
            timestamp = CURRENT_TIMESTAMP`,
         [username, squareId, lat, lng]
       );
-
-    // Insert the new entry into square_ownership
-    await db.query(
-      `INSERT INTO square_ownership (username, square_id, latitude, longitude)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (square_id, username) DO UPDATE SET
-         latitude = EXCLUDED.latitude,
-         longitude = EXCLUDED.longitude,
-         timestamp = CURRENT_TIMESTAMP`,
-      [username, squareId, lat, lng]
-    );
-
-    // Now insert the new map entry as usual
-    await db.query(
-      "INSERT INTO map_entries (username, latitude, longitude, text) VALUES ($1, $2, $3, $4)",
-      [username, lat, lng, text]
-    );
-
-    await db.query('COMMIT'); // Commit the transaction
-
-    res.json({ success: true });
-  } catch (err) {
-    await db.query('ROLLBACK'); // Rollback in case of any error
-    console.error("Database error:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
+  
+      // Now insert the new map entry as usual
+      await db.query(
+        "INSERT INTO map_entries (username, square_id, latitude, longitude, text) VALUES ($1, $2, $3, $4, $5)",
+        [username, squareId, lat, lng, text]
+      );
+  
+      res.json({ success: true });
+    } catch (err) {
+      console.error("Database error:", err.message);
+      res.status(500).json({ success: false, message: "Internal server error." });
+    }
 });
 
 app.get("/api/squares", async (req, res) => {

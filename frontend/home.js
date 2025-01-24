@@ -61,91 +61,74 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    function canLogEntry() {
-        const lastEntryKey = `lastEntryTime_${currentUser}`; // Key specific to the current user
-        const lastEntryTime = localStorage.getItem(lastEntryKey);
-
-        if (!lastEntryTime) return true;
-        
-        const timeSinceLastEntry = Date.now() - parseInt(lastEntryTime);
-        const tenMinutesInMs = 10 * 60 * 1000;
-        
-        return timeSinceLastEntry >= tenMinutesInMs;
-    }
-
-    const spinnerOverlay = document.getElementById("spinner-overlay");
-
-    function showSpinner() {
-        spinnerOverlay.style.display = "flex";
-    }
-
-    function hideSpinner() {
-        spinnerOverlay.style.display = "none";
-    }
-
     logEntryBtn.addEventListener("click", () => {
         const lastEntryKey = `lastEntryTime_${currentUser}`;
-
+      
         if (!canLogEntry()) {
-            const lastEntryTime = parseInt(localStorage.getItem(lastEntryKey), 10);
-            const timeLeft = Math.ceil((600000 - (Date.now() - lastEntryTime)) / 60000);
-            alert(`You can log another entry in ${timeLeft} minutes.`);
-            return;
+          const lastEntryTime = parseInt(localStorage.getItem(lastEntryKey), 10);
+          const timeLeft = Math.ceil((600000 - (Date.now() - lastEntryTime)) / 60000);
+          alert(`You can log another entry in ${timeLeft} minutes.`);
+          return;
         }
         if (!navigator.geolocation) {
-            alert("Geolocation is not supported by your browser.");
-            return;
+          alert("Geolocation is not supported by your browser.");
+          return;
         }
-
+      
         showSpinner(); // Show spinner before getting location
-
+      
         navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const { latitude, longitude } = position.coords;
-                const entry = {
-                    text: entryText.value.trim(),
-                    lat: latitude,
-                    lng: longitude,
-                    username: currentUser,
-                };
-
-                if (!entry.text) {
-                    alert("Entry text cannot be empty.");
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`${API_BASE_URL}/entries`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(entry),
-                    });
-
-                    if (!response.ok) {
-                        const error = await response.json();
-                        alert(error.message);
-                        return;
-                    }
-
-                    L.marker([latitude, longitude])
-                        .addTo(map)
-                        .bindPopup(`<strong>${entry.username}</strong><br>${entry.text}`);
-                    hideSpinner(); // Hide spinner after adding marker
-                    alert("Congrats on your pee!");
-                    entryText.value = "";
-                    localStorage.setItem('lastEntryTime', Date.now().toString());
-                } catch (err) {
-                    console.error("Error logging entry:", err);
-                    hideSpinner(); 
-                    alert("Failed to log entry. Please try again.");
-                }
-            },
-            () => {
-                hideSpinner();
-                alert("Unable to fetch your location.");
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            const entry = {
+              text: entryText.value.trim(),
+              lat: latitude,
+              lng: longitude,
+              username: currentUser,
+            };
+      
+            if (!entry.text) {
+              alert("Entry text cannot be empty.");
+              return;
             }
+      
+            // Calculate square_id based on latitude and longitude
+            const squareSize = 0.005;
+            const squareId = `${Math.floor(latitude / squareSize)}_${Math.floor(longitude / squareSize)}`;
+            entry.squareId = squareId;
+      
+            try {
+              const response = await fetch(`${API_BASE_URL}/entries`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(entry),
+              });
+      
+              if (!response.ok) {
+                const error = await response.json();
+                alert(error.message);
+                return;
+              }
+      
+              L.marker([latitude, longitude])
+                .addTo(map)
+                .bindPopup(`<strong>${entry.username}</strong><br>${entry.text}`);
+              hideSpinner(); // Hide spinner after adding marker
+              alert("Congrats on your pee!");
+              entryText.value = "";
+              localStorage.setItem('lastEntryTime', Date.now().toString());
+            } catch (err) {
+              console.error("Error logging entry:", err);
+              hideSpinner(); 
+              alert("Failed to log entry. Please try again.");
+            }
+          },
+          () => {
+            hideSpinner();
+            alert("Unable to fetch your location.");
+          }
         );
-    });
+      });
     
     // Initialize map when the page loads
     initializeMap();
