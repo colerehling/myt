@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
     const entryText = document.getElementById("entry-text");
     const mapDiv = document.getElementById("map");
     const API_BASE_URL = "https://myt-27ol.onrender.com/api";
@@ -93,16 +93,30 @@ document.addEventListener("DOMContentLoaded", async () => {
         return grid;
       }
   
-      await db.query(
-        `INSERT INTO square_ownership (username, square_id, latitude, longitude, timestamp)
-         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-         ON CONFLICT (square_id, username) DO UPDATE SET
-           latitude = EXCLUDED.latitude,
-           longitude = EXCLUDED.longitude,
-           timestamp = CURRENT_TIMESTAMP`,
-        [username, squareId, lat, lng]
-      );
-      
+    async function loadAllEntries() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/entries`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        if (!response.ok) {
+          console.error("Error loading entries:", await response.text());
+          return;
+        }
+        const { entries } = await response.json();
+        entries.forEach((entry) => {
+          const dateTime = new Date(entry.timestamp);
+          const formattedDate = dateTime.toLocaleString();
+          L.marker([entry.latitude, entry.longitude])
+            .addTo(map)
+            .bindPopup(
+              `${entry.username}<br>${formattedDate}<br>${entry.text}`
+            );
+        });
+      } catch (err) {
+        console.error("Error fetching entries:", err);
+      }
+    }
   
     async function loadSquareOwnership() {
       try {
