@@ -3,7 +3,6 @@ const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 const cors = require("cors");
 const bcrypt = require("bcryptjs");
-const turf = require('@turf/turf');
 require("dotenv").config();
 
 const app = express();
@@ -124,44 +123,44 @@ app.get("/api/entries", (req, res) => {
   });
 });
 
-app.get("/api/users", (req, res) => {
-  const sql = "SELECT * FROM users";
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error("Database error:", err.message);
-      return res.status(500).json({ success: false, message: "Internal server error." });
-    }
-    res.json({ success: true, users: results.rows });
-  });
-});
-
 app.post("/api/entries", async (req, res) => {
   const { username, text, lat, lng } = req.body;
 
   try {
-    await db.query('BEGIN');
+    await db.query('BEGIN'); // Start the transaction
 
-    const entryResult = await db.query(
-      "INSERT INTO map_entries (username, latitude, longitude, text) VALUES ($1, $2, $3, $4) RETURNING id",
-      [username, lat, lng, text]
-    );
-
+    // First, delete any existing entries for the same square_id
     const squareSize = 0.005;
     const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
 
+    // Delete any old logs for the same square and user
+    await db.query(
+      "DELETE FROM square_ownership WHERE square_id = $1 AND username = $2",
+      [squareId, username]
+    );
+
+    // Insert the new entry into square_ownership
     await db.query(
       `INSERT INTO square_ownership (username, square_id, latitude, longitude)
        VALUES ($1, $2, $3, $4)
-       ON CONFLICT (square_id)
-       DO UPDATE SET username = $1, latitude = $3, longitude = $4, timestamp = CURRENT_TIMESTAMP`,
+       ON CONFLICT (square_id, username) DO UPDATE SET
+         latitude = EXCLUDED.latitude,
+         longitude = EXCLUDED.longitude,
+         timestamp = CURRENT_TIMESTAMP`,
       [username, squareId, lat, lng]
     );
 
-    await db.query('COMMIT');
+    // Now insert the new map entry as usual
+    await db.query(
+      "INSERT INTO map_entries (username, latitude, longitude, text) VALUES ($1, $2, $3, $4)",
+      [username, lat, lng, text]
+    );
+
+    await db.query('COMMIT'); // Commit the transaction
 
     res.json({ success: true });
   } catch (err) {
-    await db.query('ROLLBACK');
+    await db.query('ROLLBACK'); // Rollback in case of any error
     console.error("Database error:", err.message);
     res.status(500).json({ success: false, message: "Internal server error." });
   }
@@ -197,3 +196,4 @@ app.get("/api/leaderboard", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+

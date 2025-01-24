@@ -1,148 +1,223 @@
 document.addEventListener("DOMContentLoaded", () => {
     const entryText = document.getElementById("entry-text");
     const mapDiv = document.getElementById("map");
-
     const API_BASE_URL = "https://myt-27ol.onrender.com/api";
-
     let currentUser = localStorage.getItem('currentUser');
     let map = null;
-
+  
     if (!currentUser) {
-        // Redirect to login page if not logged in
-        window.location.href = 'index.html';
+      window.location.href = 'index.html';
     }
-
-    // Initialize the map
+  
     async function initializeMap() {
-        if (map) return; // Prevent multiple map instances
-
-        map = L.map(mapDiv).setView([32.7555, -97.3308], 10); // Default map view
+        if (map) return;
+        map = L.map(mapDiv).setView([32.7555, -97.3308], 10);
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-            maxZoom: 19,
+          maxZoom: 19,
         }).addTo(map);
-
+      
+        // Create a grid layer that updates on map move and zoom
+        const gridLayer = L.layerGroup().addTo(map);
+      
+        function updateGrid() {
+          // Clear existing grid
+          gridLayer.clearLayers();
+      
+          const bounds = map.getBounds();
+          const squareSize = 0.005; // Approximately 500 meters
+      
+          // Extend grid creation beyond current view
+          const south = Math.floor(bounds.getSouth() / squareSize) * squareSize;
+          const north = Math.ceil(bounds.getNorth() / squareSize) * squareSize;
+          const west = Math.floor(bounds.getWest() / squareSize) * squareSize;
+          const east = Math.ceil(bounds.getEast() / squareSize) * squareSize;
+          
+      
+          // Create horizontal lines
+          for (let lat = south; lat <= north; lat += squareSize) {
+            L.polyline([
+              [lat, west],
+              [lat, east]
+            ], {
+              color: '#000',
+              weight: 1,
+              opacity: 0.05
+            }).addTo(gridLayer);
+          }
+      
+          // Create vertical lines
+          for (let lng = west; lng <= east; lng += squareSize) {
+            L.polyline([
+              [south, lng],
+              [north, lng]
+            ], {
+              color: '#000',
+              weight: 1,
+              opacity: 0.05
+            }).addTo(gridLayer);
+          }
+        }
+      
+        // Initial grid
+        updateGrid();
+      
+        // Update grid on map move and zoom
+        map.on('moveend', updateGrid);
+      
         await loadAllEntries();
-    }
-
+        await loadSquareOwnership();
+      }
+      
+  
+    function createGrid(bounds, squareSize) {
+        console.log("Creating grid with bounds:", bounds);
+        console.log("Square size:", squareSize);
+        
+        const grid = [];
+        const north = bounds.getNorth();
+        const south = bounds.getSouth();
+        const east = bounds.getEast();
+        const west = bounds.getWest();
+      
+        console.log("North:", north, "South:", south, "East:", east, "West:", west);
+      
+        for (let lat = south; lat <= north; lat += squareSize) {
+          for (let lng = west; lng <= east; lng += squareSize) {
+            const square = turf.square([lng, lat, lng + squareSize, lat + squareSize]);
+            console.log("Created square:", square);
+            grid.push(square);
+          }
+        }
+      
+        console.log("Total grid squares:", grid.length);
+        return grid;
+      }
+  
     async function loadAllEntries() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/entries`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            });
-            if (!response.ok) {
-                console.error("Error loading entries:", await response.text());
-                return;
-            }
-
-            const { entries } = await response.json();
-            entries.forEach((entry) => {
-                const dateTime = new Date(entry.timestamp); // Convert the timestamp to a Date object
-                const formattedDate = dateTime.toLocaleString(); // Format the date and time for display
-                
-                L.marker([entry.latitude, entry.longitude])
-                    .addTo(map)
-                    .bindPopup(
-                        `<strong>${entry.username}</strong><br>
-                        <em>${formattedDate}</em><br>
-                        ${entry.text}<br>`
-                    );
-            });
-        } catch (err) {
-            console.error("Error fetching entries:", err);
+      try {
+        const response = await fetch(`${API_BASE_URL}/entries`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        if (!response.ok) {
+          console.error("Error loading entries:", await response.text());
+          return;
         }
+        const { entries } = await response.json();
+        entries.forEach((entry) => {
+          const dateTime = new Date(entry.timestamp);
+          const formattedDate = dateTime.toLocaleString();
+          L.marker([entry.latitude, entry.longitude])
+            .addTo(map)
+            .bindPopup(
+              `${entry.username}<br>${formattedDate}<br>${entry.text}`
+            );
+        });
+      } catch (err) {
+        console.error("Error fetching entries:", err);
+      }
     }
-
+  
+    async function loadSquareOwnership() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/squares`);
+        if (!response.ok) {
+          console.error("Error loading square ownership:", await response.text());
+          return;
+        }
+  
+        const { squares } = await response.json();
+        updateSquareColors(squares);
+      } catch (err) {
+        console.error("Error fetching square ownership:", err);
+      }
+    }
+  
+    function updateSquareColors(squares) {
+      const colorMap = {};
+      const squareSize = 0.005;
+  
+      squares.forEach(square => {
+        const lat = Math.floor(square.latitude / squareSize) * squareSize;
+        const lng = Math.floor(square.longitude / squareSize) * squareSize;
+        colorMap[`${lat},${lng}`] = getColorForUsername(square.username);
+      });
+  
+      map.eachLayer(layer => {
+        if (layer instanceof L.Polygon) {
+          const bounds = layer.getBounds();
+          const key = `${bounds.getSouth()},${bounds.getWest()}`;
+          if (colorMap[key]) {
+            layer.setStyle({ fillColor: colorMap[key], fillOpacity: 0.3 });
+          }
+        }
+      });
+    }
+  
+    function getColorForUsername(username) {
+      let hash = 0;
+      for (let i = 0; i < username.length; i++) {
+        hash = username.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const color = Math.floor(Math.abs(Math.sin(hash) * 16777215)).toString(16);
+      return '#' + '0'.repeat(6 - color.length) + color;
+    }
+  
     async function fetchAllUsersEntriesCount() {
-        const userDetailsDiv = document.getElementById("userDetailsDiv");
-    
-        try {
-            const response = await fetch(`${API_BASE_URL}/entries`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            });
-    
-            if (!response.ok) {
-                console.error("Error fetching entries:", await response.text());
-                return;
-            }
-    
-            const { entries } = await response.json();
-            const entriesCount = entries.length;
-    
-            document.getElementById("entriesCount").textContent = entriesCount;
-        } catch (error) {
-            console.error("Error fetching entries count for all users:", error);
+      const userDetailsDiv = document.getElementById("userDetailsDiv");
+      try {
+        const response = await fetch(`${API_BASE_URL}/entries`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        if (!response.ok) {
+          console.error("Error fetching entries:", await response.text());
+          return;
         }
-    }    
-
-async function fetchAllUsersEntriesCount() {
-        const userDetailsDiv = document.getElementById("userDetailsDiv");
-    
-        try {
-            const response = await fetch(`${API_BASE_URL}/entries`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            });
-    
-            if (!response.ok) {
-                console.error("Error fetching entries:", await response.text());
-                return;
-            }
-    
-            const { entries } = await response.json();
-            const entriesCount = entries.length;
-    
-            document.getElementById("entriesCount").textContent = entriesCount;
-        } catch (error) {
-            console.error("Error fetching entries count for all users:", error);
-        }
-    } 
-
-    async function fetchNumberOfUsers() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            });
-    
-            if (!response.ok) {
-                console.error("Error fetching users:", await response.text());
-                return;
-            }
-    
-            const { users } = await response.json();
-            const usersCount = users.length;
-    
-            document.getElementById("usersCount").textContent = usersCount;
-        } catch (error) {
-            console.error("Error fetching the number of users:", error);
-        }
+        const { entries } = await response.json();
+        const entriesCount = entries.length;
+        document.getElementById("entriesCount").textContent = entriesCount;
+      } catch (error) {
+        console.error("Error fetching entries count for all users:", error);
+      }
     }
-    // Initialize map and fetch statistics on page load
+  
+    async function fetchNumberOfUsers() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/users`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+        if (!response.ok) {
+          console.error("Error fetching users:", await response.text());
+          return;
+        }
+        const { users } = await response.json();
+        const usersCount = users.length;
+        document.getElementById("usersCount").textContent = usersCount;
+      } catch (error) {
+        console.error("Error fetching the number of users:", error);
+      }
+    }
+  
     initializeMap();
     fetchAllUsersEntriesCount();
     fetchNumberOfUsers();
-});
-
-// JavaScript to toggle the hamburger menu
-document.addEventListener("DOMContentLoaded", () => {
+  
     const hamburgerButton = document.getElementById("hamburger-button");
     const menuLinks = document.getElementById("menu-links");
-
     hamburgerButton.addEventListener("click", () => {
-        // Toggle menu visibility
-        if (menuLinks.style.display === "block") {
-            menuLinks.style.display = "none";
-        } else {
-            menuLinks.style.display = "block";
-        }
+      if (menuLinks.style.display === "block") {
+        menuLinks.style.display = "none";
+      } else {
+        menuLinks.style.display = "block";
+      }
     });
-
-    // Close menu when clicking outside
+  
     document.addEventListener("click", (event) => {
-        if (!menuLinks.contains(event.target) && !hamburgerButton.contains(event.target)) {
-            menuLinks.style.display = "none";
-        }
+      if (!menuLinks.contains(event.target) && !hamburgerButton.contains(event.target)) {
+        menuLinks.style.display = "none";
+      }
     });
-});
+  });
+  
