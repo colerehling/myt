@@ -97,6 +97,12 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        const entryTextValue = entryText.value.trim();
+        if (entryTextValue.length > 100) {
+        alert("Entry text cannot exceed 100 characters.");
+        return;
+        }
+
         showSpinner(); // Show spinner before getting location
 
         navigator.geolocation.getCurrentPosition(
