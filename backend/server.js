@@ -127,17 +127,15 @@ app.post("/api/entries", async (req, res) => {
   const { username, text, lat, lng } = req.body;
 
   try {
-    await db.query('BEGIN'); // Start the transaction
-
-    // First, delete any existing entries for the same square_id
-    const squareSize = 0.005;
-    const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
-
-    // Delete any old logs for the same square and user
     await db.query(
-      "DELETE FROM square_ownership WHERE square_id = $1 AND username = $2",
-      [squareId, username]
-    );
+        `INSERT INTO square_ownership (username, square_id, latitude, longitude, timestamp)
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+         ON CONFLICT (square_id, username) DO UPDATE SET
+           latitude = EXCLUDED.latitude,
+           longitude = EXCLUDED.longitude,
+           timestamp = CURRENT_TIMESTAMP`,
+        [username, squareId, lat, lng]
+      );
 
     // Insert the new entry into square_ownership
     await db.query(

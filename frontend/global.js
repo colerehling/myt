@@ -134,25 +134,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     function updateSquareColors(squares) {
-      const colorMap = {};
-      const squareSize = 0.005;
-  
-      squares.forEach(square => {
-        const lat = Math.floor(square.latitude / squareSize) * squareSize;
-        const lng = Math.floor(square.longitude / squareSize) * squareSize;
-        colorMap[`${lat},${lng}`] = getColorForUsername(square.username);
-      });
-  
-      map.eachLayer(layer => {
-        if (layer instanceof L.Polygon) {
-          const bounds = layer.getBounds();
-          const key = `${bounds.getSouth()},${bounds.getWest()}`;
-          if (colorMap[key]) {
-            layer.setStyle({ fillColor: colorMap[key], fillOpacity: 0.3 });
+        const colorMap = {};
+        const mostRecentEntries = {};
+        const squareSize = 0.005;
+      
+        // Find the most recent entry for each square
+        squares.forEach(square => {
+          const squareKey = `${Math.floor(square.latitude / squareSize)}_${Math.floor(square.longitude / squareSize)}`;
+          
+          // Only update if this entry is more recent
+          if (!mostRecentEntries[squareKey] || 
+              new Date(square.timestamp) > new Date(mostRecentEntries[squareKey].timestamp)) {
+            mostRecentEntries[squareKey] = square;
           }
-        }
-      });
-    }
+        });
+      
+        // Create color map based on most recent entries
+        Object.values(mostRecentEntries).forEach(square => {
+          const lat = Math.floor(square.latitude / squareSize) * squareSize;
+          const lng = Math.floor(square.longitude / squareSize) * squareSize;
+          const key = `${lat},${lng}`;
+          colorMap[key] = getColorForUsername(square.username);
+        });
+      
+        // Color the grid squares
+        map.eachLayer(layer => {
+          if (layer instanceof L.Polygon) {
+            const bounds = layer.getBounds();
+            const key = `${bounds.getSouth()},${bounds.getWest()}`;
+            if (colorMap[key]) {
+              layer.setStyle({ 
+                fillColor: colorMap[key], 
+                fillOpacity: 0.3,
+                color: colorMap[key],  // Border color
+                weight: 1
+              });
+            }
+          }
+        });
+      }
+      
   
     function getColorForUsername(username) {
       let hash = 0;
