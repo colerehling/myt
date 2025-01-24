@@ -106,6 +106,16 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+app.get("/api/users/count", async (req, res) => {
+    try {
+      const result = await db.query("SELECT COUNT(*) FROM users");
+      res.json({ userCount: result.rows[0].count }); 
+    } catch (err) {
+      console.error("Database error:", err.message);
+      res.status(500).json({ success: false, message: "Internal server error." });
+    }
+  });
+
 app.get("/api/entries", (req, res) => {
   const { username } = req.query;
   let sql = "SELECT * FROM map_entries";

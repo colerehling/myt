@@ -204,22 +204,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   
     async function fetchNumberOfUsers() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/users`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" }
-        });
-        if (!response.ok) {
-          console.error("Error fetching users:", await response.text());
-          return;
+        try {
+          const response = await fetch(`${API_BASE_URL}/users/count`, { 
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+          });
+          if (!response.ok) {
+            console.error("Error fetching users:", await response.text());
+            return;
+          }
+          const { userCount } = await response.json(); 
+          document.getElementById("usersCount").textContent = userCount;
+        } catch (error) {
+          console.error("Error fetching the number of users:", error);
         }
-        const { users } = await response.json();
-        const usersCount = users.length;
-        document.getElementById("usersCount").textContent = usersCount;
-      } catch (error) {
-        console.error("Error fetching the number of users:", error);
       }
-    }
   
     initializeMap();
     fetchAllUsersEntriesCount();
