@@ -173,6 +173,16 @@ app.post("/api/entries", async (req, res) => {
     }
 });
 
+app.get("/api/entries/count", async (req, res) => {
+    try {
+      const result = await db.query("SELECT COUNT(*) FROM map_entries");
+      res.json({ totalMarks: result.rows[0].count });
+    } catch (err) {
+      console.error("Database error:", err.message);
+      res.status(500).json({ success: false, message: "Internal server error." });
+    }
+});
+
 app.get("/api/squares", async (req, res) => {
   try {
     const result = await db.query("SELECT * FROM square_ownership");
@@ -181,6 +191,20 @@ app.get("/api/squares", async (req, res) => {
     console.error("Database error:", err.message);
     res.status(500).json({ success: false, message: "Internal server error." });
   }
+});
+
+app.post('/api/users/color', authenticateToken, async (req, res) => {
+    const { color } = req.body;
+    const username = req.user.username;
+
+    try {
+        // Update the user's color in the database
+        await db.query('UPDATE users SET color = $1 WHERE username = $2', [color, username]);
+        res.json({ message: "Color updated successfully" });
+    } catch (error) {
+        console.error('Error updating color:', error);
+        res.status(500).json({ error: "Failed to update color" });
+    }
 });
 
 app.get("/api/leaderboard", (req, res) => {
