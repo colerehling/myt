@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (colorMap[squareId]) {
                         rectangle.setStyle({
                             fillColor: colorMap[squareId],
-                            fillOpacity: 0.6,
+                            fillOpacity: .8,
                         });
                     }
                 }
@@ -121,14 +121,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getColorForUsername(username) {
-        let hash = 0;
-        for (let i = 0; i < username.length; i++) {
-            hash = username.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        const r = (hash & 0xFF0000) >> 16;
-        const g = (hash & 0x00FF00) >> 8;
-        const b = hash & 0x0000FF;
-        return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        const hash = [...username].reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const hue = hash % 360; // Hue (0-360)
+        const saturation = 70; // Saturation (70%)
+        const lightness = 50; // Lightness (50%)
+        return `hsl(${hue}, ${saturation}%, ${lightness}%)`;
     }
 
     async function fetchAllUsersEntriesCount() {
