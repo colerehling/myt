@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
             },
             () => {
                 hideSpinner();
-                alert("Unable to fetch your location.");
+                alert("Unable to fetch your location. Make sure location services are enabled.");
             }
         );
     });

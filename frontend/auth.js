@@ -35,8 +35,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Validate password length
-        if (password.length < 8 || password.length > 30) {
-            alert("Password must be between 8 and 30 characters long.");
+        if (password.length < 8 || password.length > 25) {
+            alert("Password must be between 8 and 25 characters long.");
             return;
         }
 

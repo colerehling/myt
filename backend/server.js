@@ -106,81 +106,95 @@ app.post("/api/login", (req, res) => {
   });
 });
 
+app.post("/api/users/color", async (req, res) => {
+  const { username, color } = req.body;
+
+  if (!username || !color) {
+    return res.status(400).json({ success: false, message: "Username and color are required." });
+  }
+
+  try {
+    await db.query("UPDATE users SET color = $1 WHERE username = $2", [color, username]);
+    res.json({ message: "Color updated successfully" });
+  } catch (error) {
+    console.error("Error updating color:", error);
+    res.status(500).json({ error: "Failed to update color" });
+  }
+});
+
 app.get("/api/users/count", async (req, res) => {
-    try {
-      const result = await db.query("SELECT COUNT(*) FROM users");
-      res.json({ userCount: result.rows[0].count }); 
-    } catch (err) {
-      console.error("Database error:", err.message);
-      res.status(500).json({ success: false, message: "Internal server error." });
-    }
+  try {
+    const result = await db.query("SELECT COUNT(*) FROM users");
+    res.json({ userCount: result.rows[0].count });
+  } catch (err) {
+    console.error("Database error:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
 });
 
 app.get("/api/entries", (req, res) => {
-    const { username } = req.query;
-    let sql = `
+  const { username } = req.query;
+  let sql = `
+    SELECT DISTINCT ON (square_id) *
+    FROM map_entries
+    ORDER BY square_id, timestamp DESC
+  `;
+  const values = [];
+  if (username) {
+    sql = `
       SELECT DISTINCT ON (square_id) *
       FROM map_entries
+      WHERE username = $1
       ORDER BY square_id, timestamp DESC
     `;
-    const values = [];
-    if (username) {
-      sql = `
-        SELECT DISTINCT ON (square_id) *
-        FROM map_entries
-        WHERE username = $1
-        ORDER BY square_id, timestamp DESC
-      `;
-      values.push(username);
+    values.push(username);
+  }
+  db.query(sql, values, (err, results) => {
+    if (err) {
+      console.error("Database error:", err.message);
+      return res.status(500).json({ success: false, message: "Internal server error." });
     }
-    db.query(sql, values, (err, results) => {
-      if (err) {
-        console.error("Database error:", err.message);
-        return res.status(500).json({ success: false, message: "Internal server error." });
-      }
-      res.json({ success: true, entries: results.rows });
-    });
+    res.json({ success: true, entries: results.rows });
+  });
 });
 
 app.post("/api/entries", async (req, res) => {
-    const { username, text, lat, lng } = req.body;
-  
-    // Calculate square_id based on latitude and longitude
-    const squareSize = 0.005;
-    const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
-  
-    try {
-      await db.query(
-        `INSERT INTO square_ownership (username, square_id, latitude, longitude, timestamp)
-         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-         ON CONFLICT (square_id, username) DO UPDATE SET
-           latitude = EXCLUDED.latitude,
-           longitude = EXCLUDED.longitude,
-           timestamp = CURRENT_TIMESTAMP`,
-        [username, squareId, lat, lng]
-      );
-  
-      // Now insert the new map entry as usual
-      await db.query(
-        "INSERT INTO map_entries (username, square_id, latitude, longitude, text) VALUES ($1, $2, $3, $4, $5)",
-        [username, squareId, lat, lng, text]
-      );
-  
-      res.json({ success: true });
-    } catch (err) {
-      console.error("Database error:", err.message);
-      res.status(500).json({ success: false, message: "Internal server error." });
-    }
+  const { username, text, lat, lng } = req.body;
+
+  const squareSize = 0.005;
+  const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
+
+  try {
+    await db.query(
+      `INSERT INTO square_ownership (username, square_id, latitude, longitude, timestamp)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+       ON CONFLICT (square_id, username) DO UPDATE SET
+         latitude = EXCLUDED.latitude,
+         longitude = EXCLUDED.longitude,
+         timestamp = CURRENT_TIMESTAMP`,
+      [username, squareId, lat, lng]
+    );
+
+    await db.query(
+      "INSERT INTO map_entries (username, square_id, latitude, longitude, text) VALUES ($1, $2, $3, $4, $5)",
+      [username, squareId, lat, lng, text]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Database error:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
 });
 
 app.get("/api/entries/count", async (req, res) => {
-    try {
-      const result = await db.query("SELECT COUNT(*) FROM map_entries");
-      res.json({ totalMarks: result.rows[0].count });
-    } catch (err) {
-      console.error("Database error:", err.message);
-      res.status(500).json({ success: false, message: "Internal server error." });
-    }
+  try {
+    const result = await db.query("SELECT COUNT(*) FROM map_entries");
+    res.json({ totalMarks: result.rows[0].count });
+  } catch (err) {
+    console.error("Database error:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
 });
 
 app.get("/api/squares", async (req, res) => {
@@ -191,20 +205,6 @@ app.get("/api/squares", async (req, res) => {
     console.error("Database error:", err.message);
     res.status(500).json({ success: false, message: "Internal server error." });
   }
-});
-
-app.post('/api/users/color', authenticateToken, async (req, res) => {
-    const { color } = req.body;
-    const username = req.user.username;
-
-    try {
-        // Update the user's color in the database
-        await db.query('UPDATE users SET color = $1 WHERE username = $2', [color, username]);
-        res.json({ message: "Color updated successfully" });
-    } catch (error) {
-        console.error('Error updating color:', error);
-        res.status(500).json({ error: "Failed to update color" });
-    }
 });
 
 app.get("/api/leaderboard", (req, res) => {
@@ -227,4 +227,3 @@ app.get("/api/leaderboard", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
-
