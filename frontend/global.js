@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const rectangle = L.rectangle([[lat, lng], [lat + squareSize, lng + squareSize]], {
                         color: '#000',
                         weight: 1,
-                        opacity: 0.05,
+                        opacity: 0,
                         fillOpacity: 0,
                     }).addTo(gridLayer);
 
