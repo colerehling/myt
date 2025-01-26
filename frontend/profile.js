@@ -3,25 +3,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentUser = localStorage.getItem('currentUser');
     const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
-    const colorPicker = document.getElementById("colorPicker");
-    const setColorBtn = document.getElementById("setColorBtn");
-    const confirmColorBtn = document.getElementById("confirmColorBtn");
-    const colorPreview = document.getElementById("colorPreview");
-
     if (!currentUser) {
+        // Redirect to login page if not logged in
         window.location.href = 'index.html';
-        return;
+        return; // Stop further execution
     }
 
+    // Display the username
     userDetailsDiv.textContent = `${currentUser}`;
 
+    // Fetch user entries count, last entry date, and streak
     fetchUserEntriesData(currentUser);
-    loadUserColor();
 
     async function fetchUserEntriesData(username) {
         const userDetailsDiv = document.getElementById("userDetailsDiv");
 
         try {
+            // Fetch user entries
             const entriesResponse = await fetch(`${API_BASE_URL}/entries?username=${username}`, {
                 method: "GET",
                 headers: { "Content-Type": "application/json" }
@@ -34,10 +32,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const { entries } = await entriesResponse.json();
 
+            // Display the number of entries
             const entriesCount = entries.length;
             document.getElementById("entriesCount").textContent = entriesCount;
 
             if (entriesCount > 0) {
+                // Find the date of the last entry
                 const lastEntry = entries.reduce((latest, entry) => {
                     const entryDate = new Date(entry.timestamp);
                     return entryDate > latest ? entryDate : latest;
@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const lastEntryDateFormatted = lastEntry.toLocaleString();
                 document.getElementById("lastEntryDate").textContent = lastEntryDateFormatted;
 
+                // Calculate streak
                 const streak = calculateStreak(entries);
                 document.getElementById("streak").textContent = `${streak} day(s)`;
             } else {
@@ -58,106 +59,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function calculateStreak(entries) {
+        // Sort entries by date in descending order
         const sortedEntries = entries
             .map(entry => new Date(entry.timestamp))
             .sort((a, b) => b - a);
 
         let streak = 0;
-        let currentDate = new Date();
+        let currentDate = new Date(); // Start with today
 
         for (let entryDate of sortedEntries) {
-            const entryDay = new Date(entryDate.toDateString());
-            const currentDay = new Date(currentDate.toDateString());
+            const entryDay = new Date(entryDate.toDateString()); // Remove time
+            const currentDay = new Date(currentDate.toDateString()); // Remove time
 
             if (entryDay.getTime() === currentDay.getTime()) {
+                // Entry matches the current streak day
                 streak++;
-                currentDate.setDate(currentDate.getDate() - 1);
+                currentDate.setDate(currentDate.getDate() - 1); // Move to the previous day
             } else if (entryDay.getTime() < currentDay.getTime()) {
+                // Gap in the streak
                 break;
             }
         }
 
         return streak;
     }
+});
 
-    // Color selection functionality
-    async function loadUserColor() {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/color`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to load user color");
-            }
-
-            const { color } = await response.json();
-            if (color) {
-                colorPicker.value = color;
-                colorPreview.style.backgroundColor = color;
-            }
-        } catch (error) {
-            console.error("Error loading user color:", error);
-        }
-    }
-
-    async function setUserColor(color) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/users/color`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ color: color })
-            });
-
-            if (!response.ok) {
-                throw new Error("Failed to set color");
-            }
-
-            const data = await response.json();
-            if (data.waitPeriod) {
-                alert(`You need to wait ${data.waitPeriod} days before changing your color again.`);
-                return false;
-            }
-
-            alert("Color set successfully!");
-            return true;
-        } catch (error) {
-            console.error("Error setting color:", error);
-            alert("Failed to set color. Please try again.");
-            return false;
-        }
-    }
-
-    colorPicker.addEventListener("input", () => {
-        colorPreview.style.backgroundColor = colorPicker.value;
-    });
-
-    setColorBtn.addEventListener("click", () => {
-        const selectedColor = colorPicker.value;
-        colorPreview.style.backgroundColor = selectedColor;
-        confirmColorBtn.style.display = "inline-block";
-    });
-
-    confirmColorBtn.addEventListener("click", async () => {
-        const selectedColor = colorPicker.value;
-        const success = await setUserColor(selectedColor);
-        if (success) {
-            confirmColorBtn.style.display = "none";
-        }
-    });
-
-    // Hamburger menu functionality
+// JavaScript to toggle the hamburger menu
+document.addEventListener("DOMContentLoaded", () => {
     const hamburgerButton = document.getElementById("hamburger-button");
     const menuLinks = document.getElementById("menu-links");
 
     hamburgerButton.addEventListener("click", () => {
+        // Toggle menu visibility
         if (menuLinks.style.display === "block") {
             menuLinks.style.display = "none";
         } else {
@@ -165,6 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Close menu when clicking outside
     document.addEventListener("click", (event) => {
         if (!menuLinks.contains(event.target) && !hamburgerButton.contains(event.target)) {
             menuLinks.style.display = "none";
