@@ -132,7 +132,7 @@ app.get("/api/users/count", async (req, res) => {
   }
 });
 
-app.get("/api/entries", (req, res) => {
+app.get("/api/entries", async (req, res) => {
   const { username } = req.query;
   let sql = `
     SELECT DISTINCT ON (square_id) *
@@ -142,20 +142,20 @@ app.get("/api/entries", (req, res) => {
   const values = [];
   if (username) {
     sql = `
-      SELECT DISTINCT ON (square_id) *
+      SELECT DISTINCT ON (square_id) *, (SELECT COUNT(*) FROM map_entries WHERE username = $1) as total_entries
       FROM map_entries
       WHERE username = $1
       ORDER BY square_id, timestamp DESC
     `;
     values.push(username);
   }
-  db.query(sql, values, (err, results) => {
-    if (err) {
-      console.error("Database error:", err.message);
-      return res.status(500).json({ success: false, message: "Internal server error." });
-    }
+  try {
+    const results = await db.query(sql, values);
     res.json({ success: true, entries: results.rows });
-  });
+  } catch (err) {
+    console.error("Database error:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
 });
 
 app.post("/api/entries", async (req, res) => {
