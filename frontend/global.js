@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
             gridLayer.clearLayers();
 
             const bounds = map.getBounds();
-            const squareSize = 0.005;
+            const squareSize = 0.01;
 
             const south = Math.floor(bounds.getSouth() / squareSize) * squareSize;
             const north = Math.ceil(bounds.getNorth() / squareSize) * squareSize;
