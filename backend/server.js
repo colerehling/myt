@@ -161,7 +161,7 @@ app.get("/api/entries", (req, res) => {
 app.post("/api/entries", async (req, res) => {
   const { username, text, lat, lng } = req.body;
 
-  const squareSize = 0.005;
+  const squareSize = 0.01;
   const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
 
   try {
