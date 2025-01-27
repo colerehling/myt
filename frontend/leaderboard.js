@@ -1,7 +1,6 @@
-// leaderboard.js
-
 document.addEventListener('DOMContentLoaded', () => {
     fetchLeaderboard();
+    fetchSquareLeaderboard();
 });
 
 function fetchLeaderboard() {
@@ -9,7 +8,7 @@ function fetchLeaderboard() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                displayLeaderboard(data.leaderboard);
+                displayLeaderboard(data.leaderboard, 'entries-leaderboard');
             } else {
                 console.error('Failed to fetch leaderboard:', data.message);
             }
@@ -19,8 +18,23 @@ function fetchLeaderboard() {
         });
 }
 
-function displayLeaderboard(leaderboard) {
-    const leaderboardElement = document.getElementById('leaderboard');
+function fetchSquareLeaderboard() {
+    fetch('https://myt-27ol.onrender.com/api/square-leaderboard')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayLeaderboard(data.leaderboard, 'square-leaderboard');
+            } else {
+                console.error('Failed to fetch square leaderboard:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching square leaderboard:', error);
+        });
+}
+
+function displayLeaderboard(leaderboard, sectionId) {
+    const leaderboardElement = document.getElementById(sectionId);
 
     const table = document.createElement('table');
     table.className = 'leaderboard-table';
@@ -28,7 +42,7 @@ function displayLeaderboard(leaderboard) {
         <tr>
             <th>Rank</th>
             <th>Username</th>
-            <th>Entries</th>
+            <th>${sectionId === 'entries-leaderboard' ? 'Entries' : 'Territory Count'}</th>
         </tr>
     `;
 
@@ -37,7 +51,7 @@ function displayLeaderboard(leaderboard) {
         row.innerHTML = `
             <td class="rank">${index + 1}</td>
             <td>${user.username}</td>
-            <td>${user.entry_count}</td>
+            <td>${sectionId === 'entries-leaderboard' ? user.entry_count : user.territory_count}</td>
         `;
     });
 
