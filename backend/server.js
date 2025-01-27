@@ -244,6 +244,49 @@ app.get("/api/leaderboard", (req, res) => {
     });
   });
   
+app.get("/api/extended-square-leaderboard", async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT username, COUNT(DISTINCT square_id) as territory_count
+            FROM square_ownership
+            GROUP BY username
+        `);
+
+        const squares = result.rows;
+
+        // Calculate nearby squares of the same color
+        const userSquareCounts = {};
+        squares.forEach(square => {
+            const { username, square_id } = square;
+            if (!userSquareCounts[username]) {
+                userSquareCounts[username] = new Set();
+            }
+            userSquareCounts[username].add(square_id);
+
+            // Add nearby squares of the same color
+            const [lat, lng] = square_id.split('_').map(Number);
+            const nearbySquares = [
+                `${lat + 1}_${lng}`, `${lat - 1}_${lng}`,
+                `${lat}_${lng + 1}`, `${lat}_${lng - 1}`
+            ];
+            nearbySquares.forEach(nearbySquare => {
+                if (squares.some(s => s.square_id === nearbySquare && s.username === username)) {
+                    userSquareCounts[username].add(nearbySquare);
+                }
+            });
+        });
+
+        const leaderboard = Object.entries(userSquareCounts).map(([username, squares]) => ({
+            username,
+            territory_count: squares.size
+        })).sort((a, b) => b.territory_count - a.territory_count);
+
+        res.json({ success: true, leaderboard });
+    } catch (err) {
+        console.error("Database error:", err.message);
+        res.status(500).json({ success: false, message: "Internal server error." });
+    }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
