@@ -121,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 // Calculate square_id based on latitude and longitude
-                const squareSize = 0.005;
+                const squareSize = 0.01;
                 const squareId = `${Math.floor(latitude / squareSize)}_${Math.floor(longitude / squareSize)}`;
                 entry.squareId = squareId;
 
