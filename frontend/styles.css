@@ -267,6 +267,9 @@ a:hover {
 
     .leaderboard-table {
         font-size: 14px;
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
 
     .leaderboard-table th, .leaderboard-table td {
@@ -281,11 +284,6 @@ a:hover {
 
     .leaderboard-table th, .leaderboard-table td {
         padding: 6px 8px;
-    }
-
-    .leaderboard-table th:nth-child(n+3),
-    .leaderboard-table td:nth-child(n+3) {
-        display: none;
     }
 }
 
