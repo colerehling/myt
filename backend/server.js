@@ -213,7 +213,7 @@ app.get("/api/leaderboard", (req, res) => {
     FROM map_entries
     GROUP BY username
     ORDER BY entry_count DESC
-    LIMIT 5
+    LIMIT 10
   `;
   db.query(sql, (err, results) => {
     if (err) {
