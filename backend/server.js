@@ -247,24 +247,25 @@ app.get("/api/leaderboard", (req, res) => {
 app.get("/api/extended-square-leaderboard", async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT username, COUNT(DISTINCT square_id) as territory_count
+            SELECT username, square_id
             FROM square_ownership
-            GROUP BY username
         `);
 
         const squares = result.rows;
 
-        // Calculate nearby squares of the same color
         const userSquareCounts = {};
         squares.forEach(square => {
             const { username, square_id } = square;
+            if (!square_id || !username) return;
+
             if (!userSquareCounts[username]) {
                 userSquareCounts[username] = new Set();
             }
             userSquareCounts[username].add(square_id);
 
-            // Add nearby squares of the same color
             const [lat, lng] = square_id.split('_').map(Number);
+            if (isNaN(lat) || isNaN(lng)) return;
+
             const nearbySquares = [
                 `${lat + 1}_${lng}`, `${lat - 1}_${lng}`,
                 `${lat}_${lng + 1}`, `${lat}_${lng - 1}`
