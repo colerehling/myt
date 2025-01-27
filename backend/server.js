@@ -207,22 +207,43 @@ app.get("/api/squares", async (req, res) => {
   }
 });
 
+// First leaderboard for counting map entries per user
 app.get("/api/leaderboard", (req, res) => {
-  const sql = `
-    SELECT username, COUNT(*) as entry_count
-    FROM map_entries
-    GROUP BY username
-    ORDER BY entry_count DESC
-    LIMIT 10
-  `;
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error("Database error:", err.message);
-      return res.status(500).json({ success: false, message: "Internal server error." });
-    }
-    res.json({ success: true, leaderboard: results.rows });
+    const sql = `
+      SELECT username, COUNT(*) as entry_count
+      FROM map_entries
+      GROUP BY username
+      ORDER BY entry_count DESC
+      LIMIT 10
+    `;
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error("Database error:", err.message);
+        return res.status(500).json({ success: false, message: "Internal server error." });
+      }
+      res.json({ success: true, leaderboard: results.rows });
+    });
   });
-});
+  
+  app.get("/api/square-leaderboard", (req, res) => {
+    const sql = `
+      SELECT square_id, COUNT(DISTINCT square_id) as territory_count
+      FROM map_entries
+      GROUP BY username
+      ORDER BY territory_count DESC
+      LIMIT 10
+    `;
+    
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error("Database error:", err.message);
+        return res.status(500).json({ success: false, message: "Internal server error." });
+      }
+      
+      res.json({ success: true, leaderboard: results.rows });
+    });
+  });
+  
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
