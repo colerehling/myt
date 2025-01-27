@@ -227,7 +227,7 @@ app.get("/api/leaderboard", (req, res) => {
   
   app.get("/api/square-leaderboard", (req, res) => {
     const sql = `
-      SELECT square_id, COUNT(DISTINCT square_id) as territory_count
+      SELECT username, COUNT(DISTINCT square_id) as territory_count
       FROM map_entries
       GROUP BY username
       ORDER BY territory_count DESC
