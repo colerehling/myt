@@ -26,6 +26,7 @@
                 <div class="hamburger-menu">
                     <button id="hamburger-button">☰</button>
                     <div id="menu-links" class="menu-links">
+                        <a href="how_to.html">HOW TO</a>
                         <a href="about.html">ABOUT</a>
                         <a href="FAQ.html">FAQ</a>
                         <a href="contact.html">CONTACT</a>
@@ -41,14 +42,18 @@
             </div>
 
             <div id="map"></div>
-            <div id="entry-form">
+            <button id="create-entry">Create New Entry</button>
+            <div id="entry-form" style="display: none;">
                 <h2>Create New Entry:</h2>
                 <textarea id="entry-text" placeholder="How was your pee?" rows="4"></textarea>
                 <button id="log-entry">Log Entry</button>
+            </div>
+            <div>
                 <button id="logout">Logout</button>
             </div>
         </div>
     </div>
     <script src="home.js"></script>
+    <script src="session.js"></script>
 </body>
 </html>

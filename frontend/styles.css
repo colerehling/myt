@@ -186,17 +186,17 @@ a:hover {
     border-radius: 4px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 1000;
-    min-width: 180px;
+    min-width: 18px;
     margin-top: 8px;
 }
 
 .menu-links a {
     display: block;
-    padding: 12px 20px;
+    padding: 12px; /* Remove horizontal padding */
     text-decoration: none;
     color: #333;
     transition: all 0.3s ease;
-    text-align: left;
+    text-align: center; /* Center the text */
 }
 
 .menu-links a:hover {

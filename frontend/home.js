@@ -4,6 +4,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const entryText = document.getElementById("entry-text");
     const mapDiv = document.getElementById("map");
     const spinner = document.getElementById("spinner");
+    const createEntryBtn = document.getElementById("create-entry");
+    const entryForm = document.getElementById("entry-form");
 
     const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
@@ -18,6 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
     logoutBtn.addEventListener("click", () => {
         localStorage.removeItem('currentUser');
         window.location.href = 'index.html';
+    });
+
+    createEntryBtn.addEventListener("click", () => {
+        entryForm.style.display = "block";
+        createEntryBtn.style.display = "none";
     });
 
     async function initializeMap() {

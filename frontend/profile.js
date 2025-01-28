@@ -19,7 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
             if (data.success) {
                 const entries = data.entries;
                 const entriesCount = entries.length;
-                const lastEntryDate = entries.length > 0 ? new Date(entries[0].timestamp) : null;
+                // Find the most recent entry
+                const lastEntry = entries.reduce((latest, current) => {
+                    return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
+                }, entries[0]);
+
+                const lastEntryDate = lastEntry ? new Date(lastEntry.timestamp) : null;
                 const streak = calculateStreak(entries);
                 const totalEntries = entries.length > 0 ? entries[0].total_entries : 0;
 
@@ -40,20 +45,27 @@ document.addEventListener("DOMContentLoaded", () => {
 function calculateStreak(entries) {
     if (entries.length === 0) return 0;
 
+    // Sort entries by timestamp in descending order (most recent first)
+    entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     let streak = 1;
-    let lastDate = new Date(entries[0].timestamp).setHours(0, 0, 0, 0);
+    let currentDate = new Date(entries[0].timestamp);
+    currentDate.setHours(0, 0, 0, 0);
 
     for (let i = 1; i < entries.length; i++) {
-        const currentDate = new Date(entries[i].timestamp).setHours(0, 0, 0, 0);
-        const diffDays = (lastDate - currentDate) / (1000 * 60 * 60 * 24);
+        const entryDate = new Date(entries[i].timestamp);
+        entryDate.setHours(0, 0, 0, 0);
 
+        const diffDays = (currentDate - entryDate) / (1000 * 60 * 60 * 24);
         if (diffDays === 1) {
             streak++;
-        } else if (diffDays > 1) {
+            currentDate = entryDate;
+        } else if (diffDays === 0) {
+            // Same day, continue to next entry
+            continue;
+        } else {
+            // Streak is broken
             break;
         }
-
-        lastDate = currentDate;
     }
 
     return streak;

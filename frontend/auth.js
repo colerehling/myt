@@ -64,10 +64,28 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             alert("Registration successful!");
-            showLogin.click();
+
+            // Automatically log the user in after registration
+            const loginResponse = await fetch(`${API_BASE_URL}/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password }),
+            });
+
+            if (!loginResponse.ok) {
+                const error = await loginResponse.json();
+                alert(`Login failed: ${error.message}`);
+                return;
+            }
+
+            // Store the username in localStorage or sessionStorage
+            localStorage.setItem('currentUser', username);
+
+            // Redirect to the how_to page
+            window.location.href = 'how_to.html';
         } catch (err) {
-            console.error("Error during registration:", err);
-            alert("Failed to register. Please try again.");
+            console.error("Error during registration or login:", err);
+            alert("An error occurred. Please try again.");
         }
     });
 
@@ -91,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Store the username in localStorage or sessionStorage
             localStorage.setItem('currentUser', username);
-            
+
             // Redirect to home page
             window.location.href = 'home.html';
         } catch (err) {
@@ -100,3 +118,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
