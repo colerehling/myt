@@ -12,78 +12,52 @@ document.addEventListener("DOMContentLoaded", () => {
     // Display the username
     userDetailsDiv.textContent = `${currentUser}`;
 
-    // Fetch user entries count, last entry date, and streak
-    fetchUserEntriesData(currentUser);
-
-    async function fetchUserEntriesData(username) {
-        const userDetailsDiv = document.getElementById("userDetailsDiv");
-
-        try {
-            // Fetch user entries
-            const entriesResponse = await fetch(`${API_BASE_URL}/entries?username=${username}`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            });
-
-            if (!entriesResponse.ok) {
-                console.error("Error fetching user entries:", await entriesResponse.text());
-                return;
-            }
-
-            const { entries } = await entriesResponse.json();
-
-            // Display the number of entries
-            const entriesCount = entries.length;
-            document.getElementById("entriesCount").textContent = entriesCount;
-
-            if (entriesCount > 0) {
-                // Find the date of the last entry
-                const lastEntry = entries.reduce((latest, entry) => {
-                    const entryDate = new Date(entry.timestamp);
-                    return entryDate > latest ? entryDate : latest;
-                }, new Date(0));
-
-                const lastEntryDateFormatted = lastEntry.toLocaleString();
-                document.getElementById("lastEntryDate").textContent = lastEntryDateFormatted;
-
-                // Calculate streak
+    // Fetch user stats
+    fetch(`${API_BASE_URL}/entries?username=${currentUser}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const entries = data.entries;
+                const entriesCount = entries.length;
+                const lastEntryDate = entries.length > 0 ? new Date(entries[0].timestamp) : null;
                 const streak = calculateStreak(entries);
-                document.getElementById("streak").textContent = `${streak} day(s)`;
+                const totalEntries = entries.length > 0 ? entries[0].total_entries : 0;
+
+                document.getElementById("entriesCount").textContent = entriesCount;
+                document.getElementById("lastEntryDate").textContent = lastEntryDate ? lastEntryDate.toLocaleString() : "No entries";
+                document.getElementById("streak").textContent = streak;
+                document.getElementById("totalEntries").textContent = totalEntries;
             } else {
-                document.getElementById("lastEntryDate").textContent = "No entries yet";
-                document.getElementById("streak").textContent = "0 day(s)";
+                console.error('Failed to fetch user entries:', data.message);
             }
-        } catch (error) {
-            console.error("Error fetching user entries data:", error);
-        }
-    }
-
-    function calculateStreak(entries) {
-        // Sort entries by date in descending order
-        const sortedEntries = entries
-            .map(entry => new Date(entry.timestamp))
-            .sort((a, b) => b - a);
-
-        let streak = 0;
-        let currentDate = new Date(); // Start with today
-
-        for (let entryDate of sortedEntries) {
-            const entryDay = new Date(entryDate.toDateString()); // Remove time
-            const currentDay = new Date(currentDate.toDateString()); // Remove time
-
-            if (entryDay.getTime() === currentDay.getTime()) {
-                // Entry matches the current streak day
-                streak++;
-                currentDate.setDate(currentDate.getDate() - 1); // Move to the previous day
-            } else if (entryDay.getTime() < currentDay.getTime()) {
-                // Gap in the streak
-                break;
-            }
-        }
-
-        return streak;
-    }
+        })
+        .catch(error => {
+            console.error('Error fetching user entries:', error);
+        });
 });
+
+// Function to calculate the streak of consecutive days with entries
+function calculateStreak(entries) {
+    if (entries.length === 0) return 0;
+
+    let streak = 1;
+    let lastDate = new Date(entries[0].timestamp).setHours(0, 0, 0, 0);
+
+    for (let i = 1; i < entries.length; i++) {
+        const currentDate = new Date(entries[i].timestamp).setHours(0, 0, 0, 0);
+        const diffDays = (lastDate - currentDate) / (1000 * 60 * 60 * 24);
+
+        if (diffDays === 1) {
+            streak++;
+        } else if (diffDays > 1) {
+            break;
+        }
+
+        lastDate = currentDate;
+    }
+
+    return streak;
+}
 
 // JavaScript to toggle the hamburger menu
 document.addEventListener("DOMContentLoaded", () => {
@@ -106,3 +80,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+

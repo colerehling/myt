@@ -22,14 +22,49 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function initializeMap() {
         if (map) return; // Prevent multiple map instances
-
-        map = L.map(mapDiv).setView([32.7555, -97.3308], 10); // Default map view
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    
+        // Default coordinates
+        let defaultLat = 32.7555;
+        let defaultLng = -97.3308;
+        let defaultZoom = 10;
+    
+        try {
+            // Fetch user entries to determine the last entry
+            const response = await fetch(`${API_BASE_URL}/entries?username=${currentUser}`, {
+                method: "GET",
+                headers: { "Content-Type": "application/json" }
+            });
+    
+            if (response.ok) {
+                const { entries } = await response.json();
+                if (entries.length > 0) {
+                    // Get the most recent entry based on timestamp
+                    const lastEntry = entries[entries.length - 1];
+                    defaultLat = lastEntry.latitude;
+                    defaultLng = lastEntry.longitude;
+                    defaultZoom = 12; // Zoom in closer to the last entry
+                }
+            } else {
+                console.warn("Failed to fetch user entries for map initialization.");
+            }
+        } catch (err) {
+            console.error("Error fetching user entries:", err);
+        }
+    
+        // Initialize the map with the determined default view
+        map = L.map(mapDiv).setView([defaultLat, defaultLng], defaultZoom);
+    
+        // Use a simplified tile layer (CartoDB Positron)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
             maxZoom: 19,
+            minZoom: 3,
+            attribution: '© OpenStreetMap contributors, © CartoDB'
         }).addTo(map);
-
+    
+        // Load user entries and add markers to the map
         await loadUserEntries();
     }
+    
 
     async function loadUserEntries() {
         try {
@@ -37,17 +72,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "GET",
                 headers: { "Content-Type": "application/json" }
             });
-    
+
             if (!response.ok) {
                 console.error("Error loading entries:", await response.text());
                 return;
             }
-    
+
             const { entries } = await response.json();
             entries.forEach((entry) => {
                 const dateTime = new Date(entry.timestamp); // Convert the timestamp to a Date object
                 const formattedDate = dateTime.toLocaleString(); // Format the date and time for display
-                
+
                 L.marker([entry.latitude, entry.longitude])
                     .addTo(map)
                     .bindPopup(
@@ -66,10 +101,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const lastEntryTime = localStorage.getItem(lastEntryKey);
 
         if (!lastEntryTime) return true;
-        
+
         const timeSinceLastEntry = Date.now() - parseInt(lastEntryTime);
         const tenMinutesInMs = 10 * 60 * 1000;
-        
+
         return timeSinceLastEntry >= tenMinutesInMs;
     }
 
@@ -99,8 +134,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const entryTextValue = entryText.value.trim();
         if (entryTextValue.length > 100) {
-        alert("Entry text cannot exceed 100 characters.");
-        return;
+            alert("Entry text cannot exceed 100 characters.");
+            return;
         }
 
         showSpinner(); // Show spinner before getting location
@@ -147,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     localStorage.setItem('lastEntryTime', Date.now().toString());
                 } catch (err) {
                     console.error("Error logging entry:", err);
-                    hideSpinner(); 
+                    hideSpinner();
                     alert("Failed to log entry. Please try again.");
                 }
             },
@@ -157,7 +192,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         );
     });
-    
+
     // Initialize map when the page loads
     initializeMap();
 });

@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/rbush@3.0.1/rbush.min.js"></script>
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
 </head>
 <body>
@@ -36,6 +37,7 @@
             <div id="map"></div>
             <h2>Global Stats</h2>
             <div>
+                <div><b>Last Peer: </b><span id="lastPeerName"></span></div>
                 <div><b>Number of Users: </b><span id="usersCount"></span></div>
                 <div><b>Number of Unique Territories Marked: </b><span id="entriesCount"></span></div>
                 <div><b>Total Marks: </b><span id="totalMarks"></span></div> 

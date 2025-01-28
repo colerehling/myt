@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     fetchLeaderboard();
     fetchSquareLeaderboard();
+    fetchExtendedSquareLeaderboard();
 });
 
 function fetchLeaderboard() {
@@ -30,6 +31,21 @@ function fetchSquareLeaderboard() {
         })
         .catch(error => {
             console.error('Error fetching square leaderboard:', error);
+        });
+}
+
+function fetchExtendedSquareLeaderboard() {
+    fetch('https://myt-27ol.onrender.com/api/extended-square-leaderboard')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayLeaderboard(data.leaderboard, 'extended-square-leaderboard');
+            } else {
+                console.error('Failed to fetch extended square leaderboard:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching extended square leaderboard:', error);
         });
 }
 
