@@ -201,8 +201,8 @@ document.addEventListener("DOMContentLoaded", () => {
     function getColorForUsername(username, opacity = 1) {
         const hash = [...username].reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const hue = hash % 360;
-        const saturation = 40 + (hash % 60); // Vary saturation between 40% and 100%
-        const lightness = 30 + (hash % 40); // Vary lightness between 30% and 70%
+        const saturation = 30 + (hash % 70); // Vary saturation between 40% and 100%
+        const lightness = 30 + (hash % 45); // Vary lightness between 30% and 70%
         return `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
     }
 
