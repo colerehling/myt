@@ -1,36 +1,17 @@
-const bodyParser = require("body-parser");
+const http = require("http");
 const { Pool } = require("pg");
-const cors = require("cors");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const PORT = process.env.PORT || 3000;
 
-app.use(cors({
-  origin: 'http://localhost:3000', // or your frontend URL
-  credentials: true
-}));
-app.use(bodyParser.json());
-
-// Add session middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', // use secure cookies in production
-    maxAge: 600000 // 10 minutes
-  }
-}));
 const db = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: parseInt(process.env.DB_PORT, 10),
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: { rejectUnauthorized: false },
 });
 
 db.connect((err) => {
@@ -41,275 +22,103 @@ db.connect((err) => {
   console.log("Connected to PostgreSQL database.");
 });
 
-app.get("/", (req, res) => {
-  res.send("Welcome to the MYT API!");
-});
-
-app.post("/api/register", async (req, res) => {
-  const { email, username, password } = req.body;
-
-  if (!email || !username || !password) {
-    return res.status(400).json({ success: false, message: "All fields are required." });
-  }
-
-  const emailRegex = /\S+@\S+\.\S+/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ success: false, message: "Please provide a valid email address." });
-  }
-
-  if (username.length < 4 || username.length > 30) {
-    return res.status(400).json({ success: false, message: "Username must be between 4 and 30 characters long." });
-  }
-
-  if (password.length < 8 || password.length > 30) {
-    return res.status(400).json({ success: false, message: "Password must be between 8 and 30 characters long." });
-  }
-
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    db.query("SELECT * FROM users WHERE email = $1", [email], (err, results) => {
-      if (err) {
-        console.error("Database error:", err.message);
-        return res.status(500).json({ success: false, message: "Internal server error." });
+const parseBody = async (req) => {
+  return new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => (body += chunk));
+    req.on("end", () => {
+      try {
+        resolve(JSON.parse(body));
+      } catch (err) {
+        reject(new Error("Invalid JSON"));
       }
-      if (results.rows.length > 0) {
-        return res.status(400).json({ success: false, message: "Email already exists." });
-      }
-      db.query("SELECT * FROM users WHERE username = $1", [username], (err, results) => {
-        if (err) {
-          console.error("Database error:", err.message);
-          return res.status(500).json({ success: false, message: "Internal server error." });
-        }
-        if (results.rows.length > 0) {
-          return res.status(400).json({ success: false, message: "Username already exists." });
-        }
-        db.query("INSERT INTO users (email, username, password) VALUES ($1, $2, $3)", [email, username, hashedPassword], (err) => {
-          if (err) {
-            console.error("Database error:", err.message);
-            return res.status(500).json({ success: false, message: "Internal server error." });
-          }
-          res.json({ success: true, message: "Registration successful!" });
-        });
-      });
-    });
-  } catch (err) {
-    console.error("Error during registration:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
-});
-
-app.post("/api/login", (req, res) => {
-  const { username, password } = req.body;
-  db.query("SELECT * FROM users WHERE username = $1", [username], async (err, results) => {
-    if (err) {
-      console.error("Database error:", err.message);
-      return res.status(500).json({ success: false, message: "Internal server error." });
-    }
-    if (results.rows.length === 0) {
-      return res.status(401).json({ success: false, message: "Invalid username or password." });
-    }
-    const user = results.rows[0];
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.status(401).json({ success: false, message: "Invalid username or password." });
-    }
-    req.session.user = { id: user.id, username: user.username };
-    res.json({ success: true });
-  });
-});
-
-// Add a logout route
-app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: "Failed to logout." });
-    }
-    res.json({ success: true, message: "Logged out successfully." });
-  });
-});
-app.post("/api/users/color", async (req, res) => {
-  const { username, color } = req.body;
-
-  if (!username || !color) {
-    return res.status(400).json({ success: false, message: "Username and color are required." });
-  }
-
-  try {
-    await db.query("UPDATE users SET color = $1 WHERE username = $2", [color, username]);
-    res.json({ message: "Color updated successfully" });
-  } catch (error) {
-    console.error("Error updating color:", error);
-    res.status(500).json({ error: "Failed to update color" });
-  }
-});
-
-app.get("/api/users/count", async (req, res) => {
-  try {
-    const result = await db.query("SELECT COUNT(*) FROM users");
-    res.json({ userCount: result.rows[0].count });
-  } catch (err) {
-    console.error("Database error:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
-});
-
-app.get("/api/entries", async (req, res) => {
-  const { username } = req.query;
-  let sql = `
-    SELECT DISTINCT ON (square_id) *
-    FROM map_entries
-    ORDER BY square_id, timestamp DESC
-  `;
-  const values = [];
-  if (username) {
-    sql = `
-      SELECT DISTINCT ON (square_id) *, (SELECT COUNT(*) FROM map_entries WHERE username = $1) as total_entries
-      FROM map_entries
-      WHERE username = $1
-      ORDER BY square_id, timestamp DESC
-    `;
-    values.push(username);
-  }
-  try {
-    const results = await db.query(sql, values);
-    res.json({ success: true, entries: results.rows });
-  } catch (err) {
-    console.error("Database error:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
-});
-
-app.post("/api/entries", async (req, res) => {
-  const { username, text, lat, lng } = req.body;
-
-  const squareSize = 0.01;
-  const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
-
-  try {
-    await db.query(
-      `INSERT INTO square_ownership (username, square_id, latitude, longitude, timestamp)
-       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-       ON CONFLICT (square_id, username) DO UPDATE SET
-         latitude = EXCLUDED.latitude,
-         longitude = EXCLUDED.longitude,
-         timestamp = CURRENT_TIMESTAMP`,
-      [username, squareId, lat, lng]
-    );
-
-    await db.query(
-      "INSERT INTO map_entries (username, square_id, latitude, longitude, text) VALUES ($1, $2, $3, $4, $5)",
-      [username, squareId, lat, lng, text]
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Database error:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
-});
-
-app.get("/api/entries/count", async (req, res) => {
-  try {
-    const result = await db.query("SELECT COUNT(*) FROM map_entries");
-    res.json({ totalMarks: result.rows[0].count });
-  } catch (err) {
-    console.error("Database error:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
-});
-
-app.get("/api/squares", async (req, res) => {
-  try {
-    const result = await db.query("SELECT * FROM square_ownership");
-    res.json({ success: true, squares: result.rows });
-  } catch (err) {
-    console.error("Database error:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
-});
-
-// First leaderboard for counting map entries per user
-app.get("/api/leaderboard", (req, res) => {
-    const sql = `
-      SELECT username, COUNT(*) as entry_count
-      FROM map_entries
-      GROUP BY username
-      ORDER BY entry_count DESC
-      LIMIT 10
-    `;
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error("Database error:", err.message);
-        return res.status(500).json({ success: false, message: "Internal server error." });
-      }
-      res.json({ success: true, leaderboard: results.rows });
     });
   });
-  
-  app.get("/api/square-leaderboard", (req, res) => {
-    const sql = `
-      SELECT username, COUNT(DISTINCT square_id) as territory_count
-      FROM map_entries
-      GROUP BY username
-      ORDER BY territory_count DESC
-      LIMIT 10
-    `;
-    
-    db.query(sql, (err, results) => {
-      if (err) {
-        console.error("Database error:", err.message);
-        return res.status(500).json({ success: false, message: "Internal server error." });
-      }
-      
-      res.json({ success: true, leaderboard: results.rows });
-    });
-  });
-  
-app.get("/api/extended-square-leaderboard", async (req, res) => {
+};
+
+const routes = {
+  async register(req, res) {
     try {
-        const result = await db.query(`
-            SELECT username, square_id
-            FROM square_ownership
-        `);
+      const { email, username, password } = await parseBody(req);
+      if (!email || !username || !password) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: false, message: "All fields are required." }));
+      }
 
-        const squares = result.rows;
+      const emailRegex = /\S+@\S+\.\S+/;
+      if (!emailRegex.test(email)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: false, message: "Invalid email address." }));
+      }
 
-        const userSquareCounts = {};
-        squares.forEach(square => {
-            const { username, square_id } = square;
-            if (!square_id || !username) return;
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const emailExists = await db.query("SELECT 1 FROM users WHERE email = $1", [email]);
+      if (emailExists.rows.length) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: false, message: "Email already exists." }));
+      }
 
-            if (!userSquareCounts[username]) {
-                userSquareCounts[username] = new Set();
-            }
-            userSquareCounts[username].add(square_id);
+      const usernameExists = await db.query("SELECT 1 FROM users WHERE username = $1", [username]);
+      if (usernameExists.rows.length) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: false, message: "Username already exists." }));
+      }
 
-            const [lat, lng] = square_id.split('_').map(Number);
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            const nearbySquares = [
-                `${lat + 1}_${lng}`, `${lat - 1}_${lng}`,
-                `${lat}_${lng + 1}`, `${lat}_${lng - 1}`
-            ];
-            nearbySquares.forEach(nearbySquare => {
-                if (squares.some(s => s.square_id === nearbySquare && s.username === username)) {
-                    userSquareCounts[username].add(nearbySquare);
-                }
-            });
-        });
-
-        const leaderboard = Object.entries(userSquareCounts).map(([username, squares]) => ({
-            username,
-            territory_count: squares.size
-        })).sort((a, b) => b.territory_count - a.territory_count).slice(0, 10);
-
-        res.json({ success: true, leaderboard });
+      await db.query("INSERT INTO users (email, username, password) VALUES ($1, $2, $3)", [email, username, hashedPassword]);
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, message: "Registration successful!" }));
     } catch (err) {
-        console.error("Database error:", err.message);
-        res.status(500).json({ success: false, message: "Internal server error." });
+      console.error("Error during registration:", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, message: "Internal server error." }));
     }
+  },
+
+  async login(req, res) {
+    try {
+      const { username, password } = await parseBody(req);
+      const userQuery = await db.query("SELECT * FROM users WHERE username = $1", [username]);
+
+      if (!userQuery.rows.length) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: false, message: "Invalid username or password." }));
+      }
+
+      const user = userQuery.rows[0];
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        res.writeHead(401, { "Content-Type": "application/json" });
+        return res.end(JSON.stringify({ success: false, message: "Invalid username or password." }));
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, user: { id: user.id, username: user.username } }));
+    } catch (err) {
+      console.error("Error during login:", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: false, message: "Internal server error." }));
+    }
+  },
+
+  async notFound(req, res) {
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ success: false, message: "Route not found." }));
+  },
+};
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const { pathname } = url;
+
+  if (req.method === "POST" && pathname === "/api/register") {
+    return routes.register(req, res);
+  } else if (req.method === "POST" && pathname === "/api/login") {
+    return routes.login(req, res);
+  } else {
+    return routes.notFound(req, res);
+  }
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
