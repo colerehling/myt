@@ -127,16 +127,6 @@ app.post('/api/logout', (req, res) => {
     res.json({ success: true, message: "Logged out successfully." });
   });
 });
-
-// Add a route to check session status
-app.get('/api/check-session', (req, res) => {
-  if (req.session.user) {
-    res.json({ loggedIn: true, user: req.session.user });
-  } else {
-    res.json({ loggedIn: false });
-  }
-});
-
 app.post("/api/users/color", async (req, res) => {
   const { username, color } = req.body;
 
