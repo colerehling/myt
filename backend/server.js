@@ -280,7 +280,7 @@ app.get("/api/extended-square-leaderboard", async (req, res) => {
         const leaderboard = Object.entries(userSquareCounts).map(([username, squares]) => ({
             username,
             territory_count: squares.size
-        })).sort((a, b) => b.territory_count - a.territory_count);
+        })).sort((a, b) => b.territory_count - a.territory_count).slice(0, 10);
 
         res.json({ success: true, leaderboard });
     } catch (err) {

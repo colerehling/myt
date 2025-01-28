@@ -335,3 +335,22 @@ a:hover {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Username Tips */
+.username-tips {
+    text-align: left;
+    background: #fff;
+    padding: 10px; /* Smaller padding around the words */
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px; /* Larger margin between the link and the tips box */
+}
+
+.username-tips p, .username-tips ul {
+    margin: 5px 0; /* Smaller margins around the words inside the tips box */
+}
+
+#register-container {
+    margin-top: 20px; /* Add this line to create a gap */
+    margin-bottom: 20px; /* Add this line to create a gap */
+}

@@ -16,6 +16,16 @@ document.addEventListener("DOMContentLoaded", () => {
         loginForm.style.display = "block";
     });
 
+    document.getElementById('show-register').addEventListener('click', function() {
+        document.getElementById('login-form').style.display = 'none';
+        document.getElementById('register-container').style.display = 'block';
+    });
+
+    document.getElementById('show-login').addEventListener('click', function() {
+        document.getElementById('register-container').style.display = 'none';
+        document.getElementById('login-form').style.display = 'block';
+    });
+
     registerForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const email = document.getElementById("reg-email").value;
