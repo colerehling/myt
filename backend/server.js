@@ -14,16 +14,6 @@ app.use(cors({
 }));
 app.use(bodyParser.json());
 
-// Add session middleware
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', // use secure cookies in production
-    maxAge: 600000 // 10 minutes
-  }
-}));
 const db = new Pool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -115,21 +105,9 @@ app.post("/api/login", (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({ success: false, message: "Invalid username or password." });
     }
-    req.session.user = { id: user.id, username: user.username };
     res.json({ success: true });
   });
 });
-
-// Add a logout route
-app.post('/api/logout', (req, res) => {
-  req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ success: false, message: "Failed to logout." });
-    }
-    res.json({ success: true, message: "Logged out successfully." });
-  });
-});
-
 
 app.post("/api/users/color", async (req, res) => {
   const { username, color } = req.body;
@@ -249,7 +227,7 @@ app.get("/api/leaderboard", (req, res) => {
       res.json({ success: true, leaderboard: results.rows });
     });
   });
-  
+
   app.get("/api/square-leaderboard", (req, res) => {
     const sql = `
       SELECT username, COUNT(DISTINCT square_id) as territory_count
@@ -270,7 +248,8 @@ app.get("/api/leaderboard", (req, res) => {
   });
   
 app.get("/api/extended-square-leaderboard", async (req, res) => {
-    try {
+    try
+{
         const result = await db.query(`
             SELECT username, square_id
             FROM square_ownership
