@@ -208,11 +208,6 @@ app.get("/api/entries/states/count", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-
-
 app.get("/api/squares", async (req, res) => {
   try {
     const result = await db.query("SELECT * FROM square_ownership");
