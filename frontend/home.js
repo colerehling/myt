@@ -36,18 +36,16 @@ document.addEventListener("DOMContentLoaded", () => {
         let defaultZoom = 10;
     
         try {
-            // Fetch user entries to determine the most recent entry
             const response = await fetch(`${API_BASE_URL}/entries?username=${currentUser}`);
             if (response.ok) {
                 const { entries } = await response.json();
                 if (entries.length > 0) {
-                    // Get the most recent entry based on timestamp
                     const lastEntry = entries.reduce((latest, current) => 
                         new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest
                     );
                     defaultLat = lastEntry.latitude;
                     defaultLng = lastEntry.longitude;
-                    defaultZoom = 12; // Zoom in closer to the last entry
+                    defaultZoom = 12;
                 }
             } else {
                 console.warn("Failed to fetch user entries for map initialization.");
@@ -56,19 +54,15 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Error fetching user entries:", err);
         }
     
-        // Initialize the map with the determined default view
         map = L.map(mapDiv).setView([defaultLat, defaultLng], defaultZoom);
     
-        // Use a simplified tile layer (CartoDB Positron)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
             maxZoom: 19,
             minZoom: 3,
         }).addTo(map);
     
-        // Load user entries and add markers to the map
         await loadUserEntries();
     }
-    
 
     async function loadUserEntries() {
         try {
@@ -84,8 +78,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const { entries } = await response.json();
             entries.forEach((entry) => {
-                const dateTime = new Date(entry.timestamp); // Convert the timestamp to a Date object
-                const formattedDate = dateTime.toLocaleString(); // Format the date and time for display
+                const dateTime = new Date(entry.timestamp);
+                const formattedDate = dateTime.toLocaleString();
 
                 L.marker([entry.latitude, entry.longitude])
                     .addTo(map)
@@ -101,12 +95,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function canLogEntry() {
-        const lastEntryKey = `lastEntryTime_${currentUser}`; // Key specific to the current user
-        const lastEntryTime = localStorage.getItem(lastEntryKey);
+        const lastEntryKey = `lastEntryTime_${currentUser}`;
+        const lastEntryTime = parseInt(localStorage.getItem(lastEntryKey), 10);
 
-        if (!lastEntryTime) return true;
+        if (!lastEntryTime || isNaN(lastEntryTime)) return true;
 
-        const timeSinceLastEntry = Date.now() - parseInt(lastEntryTime);
+        const timeSinceLastEntry = Date.now() - lastEntryTime;
         const tenMinutesInMs = 10 * 60 * 1000;
 
         return timeSinceLastEntry >= tenMinutesInMs;
@@ -124,13 +118,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     logEntryBtn.addEventListener("click", () => {
         const lastEntryKey = `lastEntryTime_${currentUser}`;
+        const lastEntryTime = parseInt(localStorage.getItem(lastEntryKey), 10);
 
         if (!canLogEntry()) {
-            const lastEntryTime = parseInt(localStorage.getItem(lastEntryKey), 10);
-            const timeLeft = Math.ceil((600000 - (Date.now() - lastEntryTime)) / 60000);
-            alert(`You can log another entry in ${timeLeft} minutes.`);
+            if (!isNaN(lastEntryTime)) {
+                const timeLeft = Math.ceil((600000 - (Date.now() - lastEntryTime)) / 60000);
+                alert(`You can log another entry in ${timeLeft} minutes.`);
+            } else {
+                alert("Cooldown time not found. Try again later.");
+            }
             return;
         }
+
         if (!navigator.geolocation) {
             alert("Geolocation is not supported by your browser.");
             return;
@@ -142,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        showSpinner(); // Show spinner before getting location
+        showSpinner();
 
         navigator.geolocation.getCurrentPosition(
             async (position) => {
@@ -159,7 +158,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
 
-                // Calculate square_id based on latitude and longitude
                 const squareSize = 0.01;
                 const squareId = `${Math.floor(latitude / squareSize)}_${Math.floor(longitude / squareSize)}`;
                 entry.squareId = squareId;
@@ -180,10 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     L.marker([latitude, longitude])
                         .addTo(map)
                         .bindPopup(`<strong>${entry.username}</strong><br>${entry.text}`);
-                    hideSpinner(); // Hide spinner after adding marker
+                    hideSpinner();
                     alert("Congrats on your pee!");
                     entryText.value = "";
-                    localStorage.setItem('lastEntryTime', Date.now().toString());
+
+                    localStorage.setItem(lastEntryKey, Date.now().toString());
                 } catch (err) {
                     console.error("Error logging entry:", err);
                     hideSpinner();
@@ -197,7 +196,6 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     });
 
-    // Initialize map when the page loads
     initializeMap();
 });
 
@@ -207,7 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const menuLinks = document.getElementById("menu-links");
 
     hamburgerButton.addEventListener("click", () => {
-        // Toggle menu visibility
         if (menuLinks.style.display === "block") {
             menuLinks.style.display = "none";
         } else {
@@ -215,7 +212,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Close menu when clicking outside
     document.addEventListener("click", (event) => {
         if (!menuLinks.contains(event.target) && !hamburgerButton.contains(event.target)) {
             menuLinks.style.display = "none";
