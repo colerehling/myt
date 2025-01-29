@@ -195,6 +195,24 @@ app.get("/api/entries/count", async (req, res) => {
   }
 });
 
+// New endpoint to get the count of unique states
+app.get("/api/entries/states/count", async (req, res) => {
+  try {
+    const query = 'SELECT COUNT(DISTINCT state) AS state_count FROM map_entries';
+    const result = await db.query(query);
+    const stateCount = result.rows[0].state_count;
+    res.json({ stateCount });
+  } catch (error) {
+    console.error('Error fetching state count:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+
 app.get("/api/squares", async (req, res) => {
   try {
     const result = await db.query("SELECT * FROM square_ownership");

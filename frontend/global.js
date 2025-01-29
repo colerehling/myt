@@ -137,16 +137,17 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadData() {
         try {
             // Fetch all data in parallel
-            const [entriesResponse, squaresResponse, usersCountResponse, totalMarksResponse] = await Promise.all([
+            const [entriesResponse, squaresResponse, usersCountResponse, totalMarksResponse, statesCountResponse] = await Promise.all([
                 fetch(`${API_BASE_URL}/entries`),
                 fetch(`${API_BASE_URL}/squares`),
                 fetch(`${API_BASE_URL}/users/count`),
-                fetch(`${API_BASE_URL}/entries/count`)
+                fetch(`${API_BASE_URL}/entries/count`),
+                fetch(`${API_BASE_URL}/entries/states/count`)
             ]);
 
             // Handle potential errors
-            if (!entriesResponse.ok || !squaresResponse.ok || !usersCountResponse.ok || !totalMarksResponse.ok) {
-                console.error("Error loading data:", await entriesResponse.text(), await squaresResponse.text());
+            if (!entriesResponse.ok || !squaresResponse.ok || !usersCountResponse.ok || !totalMarksResponse.ok || !statesCountResponse.ok) {
+                console.error("Error loading data:", await entriesResponse.text(), await squaresResponse.text(), await statesCountResponse.text());
                 return;
             }
 
@@ -155,11 +156,13 @@ document.addEventListener("DOMContentLoaded", () => {
             const { squares } = await squaresResponse.json();
             const { userCount } = await usersCountResponse.json();
             const { totalMarks } = await totalMarksResponse.json();
+            const { stateCount } = await statesCountResponse.json();
 
             // Update UI with fetched data
             document.getElementById("entriesCount").textContent = entries.length;
             document.getElementById("usersCount").textContent = userCount;
             document.getElementById("totalMarks").textContent = totalMarks;
+            document.getElementById("statesCount").textContent = stateCount; 
 
             // Add markers for entries
             entries.forEach(entry => {
