@@ -32,23 +32,27 @@ document.addEventListener("DOMContentLoaded", () => {
             const sePoint = this._map.unproject(se, coords.z);
 
             for (let lat = nw.lat; lat > sePoint.lat; lat -= squareSize) {
-                for (let lng = nw.lng; lng < sePoint.lng; lng += squareSize) {
-                    const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
-                    const pixelBounds = this.getPixelBounds(lat, lng, squareSize, coords, tileSize);
+    for (let lng = nw.lng; lng < sePoint.lng; lng += squareSize) {
+        const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
+        const pixelBounds = this.getPixelBounds(lat, lng, squareSize, coords, tileSize);
 
-                    ctx.beginPath();
-                    ctx.rect(pixelBounds.x, pixelBounds.y, pixelBounds.width, pixelBounds.height);
-                    ctx.strokeStyle = '#000';
-                    ctx.lineWidth = 0.5;
-                    ctx.globalAlpha = 0.05;
-                    ctx.stroke();
-                    ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.rect(pixelBounds.x, pixelBounds.y, pixelBounds.width, pixelBounds.height);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 0.5;
+        ctx.globalAlpha = 0.05;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
 
-                    // Use the square's color or find the nearest available color as a fallback
-                    ctx.fillStyle = colorMap[squareId] || this.findNearestColor(lat, lng) || '#CCCCCC';
-                    ctx.fill();
-                }
-            }
+        // Determine the color
+        const color = colorMap[squareId] || this.findNearestColor(lat, lng);
+        
+        if (color) {  // Only fill if a valid color is found
+            ctx.fillStyle = color;
+            ctx.fill();
+        }
+    }
+}
         },
 
         getPixelBounds: function (lat, lng, squareSize, coords, tileSize) {
@@ -114,13 +118,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // Initialize the map with the determined default view
         map = L.map(mapDiv, {
             minZoom: 6.5, // Set the minimum zoom level
-            maxZoom: 18 // Set the maximum zoom level
+            maxZoom: 17 // Set the maximum zoom level
         }).setView([defaultLat, defaultLng], defaultZoom);
     
         // Add a tile layer to the map
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '© OpenStreetMap contributors, © CartoDB'
+            maxZoom: 17,
         }).addTo(map);
     
         // Add the custom grid layer
@@ -199,10 +202,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function getColorForUsername(username, opacity = 1) {
-        const hash = [...username].reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const hue = hash % 360;
-        const saturation = 30 + (hash % 70); // Vary saturation between 40% and 100%
-        const lightness = 30 + (hash % 45); // Vary lightness between 30% and 70%
+        // Create a more varied hash using bitwise shifting
+        let hash = 1;
+        for (let i = 0; i < username.length; i++) {
+            hash = (hash << 5) - hash + username.charCodeAt(i);
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+    
+        // Use the hash to generate a wider variety of colors
+        const hue = Math.abs(hash) % 350; // Full spectrum of colors
+        const saturation = 50 + (Math.abs(hash) % 60); // Between 40% and 100%
+        const lightness = 30 + (Math.abs(hash) % 60); // Between 25% and 75%
+    
         return `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;
     }
 

@@ -36,17 +36,15 @@ document.addEventListener("DOMContentLoaded", () => {
         let defaultZoom = 10;
     
         try {
-            // Fetch user entries to determine the last entry
-            const response = await fetch(`${API_BASE_URL}/entries?username=${currentUser}`, {
-                method: "GET",
-                headers: { "Content-Type": "application/json" }
-            });
-    
+            // Fetch user entries to determine the most recent entry
+            const response = await fetch(`${API_BASE_URL}/entries?username=${currentUser}`);
             if (response.ok) {
                 const { entries } = await response.json();
                 if (entries.length > 0) {
                     // Get the most recent entry based on timestamp
-                    const lastEntry = entries[entries.length - 1];
+                    const lastEntry = entries.reduce((latest, current) => 
+                        new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest
+                    );
                     defaultLat = lastEntry.latitude;
                     defaultLng = lastEntry.longitude;
                     defaultZoom = 12; // Zoom in closer to the last entry
@@ -65,7 +63,6 @@ document.addEventListener("DOMContentLoaded", () => {
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
             maxZoom: 19,
             minZoom: 3,
-            attribution: '© OpenStreetMap contributors, © CartoDB'
         }).addTo(map);
     
         // Load user entries and add markers to the map
