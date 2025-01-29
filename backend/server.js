@@ -107,21 +107,17 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-app.post("/api/users/color", async (req, res) => {
-  const { username, color } = req.body;
-
-  if (!username || !color) {
-    return res.status(400).json({ success: false, message: "Username and color are required." });
-  }
-
+async function getStateFromCoords(latitude, longitude) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
   try {
-    await db.query("UPDATE users SET color = $1 WHERE username = $2", [color, username]);
-    res.json({ message: "Color updated successfully" });
+    const response = await fetch(url);
+    const data = await response.json();
+    return data.address?.state || "Unknown"; // Return state name or "Unknown" if not found
   } catch (error) {
-    console.error("Error updating color:", error);
-    res.status(500).json({ error: "Failed to update color" });
+    console.error("Error fetching state:", error);
+    return "Unknown";
   }
-});
+}
 
 app.get("/api/users/count", async (req, res) => {
   try {
@@ -162,6 +158,7 @@ app.get("/api/entries", async (req, res) => {
 app.post("/api/entries", async (req, res) => {
   const { username, text, lat, lng } = req.body;
 
+  const state = await getStateFromCoords(lat, lng);
   const squareSize = 0.01;
   const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
 
@@ -177,8 +174,8 @@ app.post("/api/entries", async (req, res) => {
     );
 
     await db.query(
-      "INSERT INTO map_entries (username, square_id, latitude, longitude, text) VALUES ($1, $2, $3, $4, $5)",
-      [username, squareId, lat, lng, text]
+      "INSERT INTO map_entries (username, square_id, latitude, longitude, text, state) VALUES ($1, $2, $3, $4, $5, $6)",
+      [username, squareId, lat, lng, text, state]
     );
 
     res.json({ success: true });
@@ -244,52 +241,6 @@ app.get("/api/leaderboard", (req, res) => {
       res.json({ success: true, leaderboard: results.rows });
     });
   });
-  
-app.get("/api/extended-square-leaderboard", async (req, res) => {
-    try
-{
-        const result = await db.query(`
-            SELECT username, square_id
-            FROM square_ownership
-        `);
-
-        const squares = result.rows;
-
-        const userSquareCounts = {};
-        squares.forEach(square => {
-            const { username, square_id } = square;
-            if (!square_id || !username) return;
-
-            if (!userSquareCounts[username]) {
-                userSquareCounts[username] = new Set();
-            }
-            userSquareCounts[username].add(square_id);
-
-            const [lat, lng] = square_id.split('_').map(Number);
-            if (isNaN(lat) || isNaN(lng)) return;
-
-            const nearbySquares = [
-                `${lat + 1}_${lng}`, `${lat - 1}_${lng}`,
-                `${lat}_${lng + 1}`, `${lat}_${lng - 1}`
-            ];
-            nearbySquares.forEach(nearbySquare => {
-                if (squares.some(s => s.square_id === nearbySquare && s.username === username)) {
-                    userSquareCounts[username].add(nearbySquare);
-                }
-            });
-        });
-
-        const leaderboard = Object.entries(userSquareCounts).map(([username, squares]) => ({
-            username,
-            territory_count: squares.size
-        })).sort((a, b) => b.territory_count - a.territory_count).slice(0, 10);
-
-        res.json({ success: true, leaderboard });
-    } catch (err) {
-        console.error("Database error:", err.message);
-        res.status(500).json({ success: false, message: "Internal server error." });
-    }
-});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
