@@ -1,24 +1,3 @@
-function submitForm(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
-            const subject = document.getElementById('subject').value;
-            const message = document.getElementById('message').value;
-
-            // Basic form validation
-            if (!name || !email || !subject || !message) {
-                alert('Please fill out all fields');
-                return;
-            }
-
-            // In a real-world scenario, you'd send this to a backend
-            alert('Message sent successfully! We will get back to you soon.');
-            
-            // Optional: Reset form after submission
-            event.target.reset();
-        }
-        
 // JavaScript to toggle the hamburger menu
 document.addEventListener("DOMContentLoaded", () => {
     const hamburgerButton = document.getElementById("hamburger-button");
