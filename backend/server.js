@@ -272,6 +272,22 @@ app.get("/api/leaderboard", (req, res) => {
     }
 });
 
+app.get("/api/recent-entries", async (req, res) => {
+  try {
+      const result = await db.query(`
+          SELECT username, timestamp, state, text 
+          FROM map_entries 
+          ORDER BY timestamp DESC 
+          LIMIT 10
+      `);
+      res.json({ success: true, entries: result.rows });
+  } catch (err) {
+      console.error("Database error:", err.message);
+      res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+
+
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
