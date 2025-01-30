@@ -258,10 +258,10 @@ app.get("/api/leaderboard", (req, res) => {
   app.get("/api/extended-square-leaderboard", async (req, res) => {
     try {
         const result = await db.query(`
-            SELECT username, COUNT(DISTINCT square_id) AS territory_owned_count
+            SELECT username, COUNT(DISTINCT square_id) AS territory_count
             FROM square_ownership
             GROUP BY username
-            ORDER BY territory_owned_count DESC
+            ORDER BY territory_count DESC
             LIMIT 10
         `);
 
