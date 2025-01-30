@@ -235,7 +235,7 @@ app.get("/api/leaderboard", (req, res) => {
       res.json({ success: true, leaderboard: results.rows });
     });
   });
-
+  
   app.get("/api/square-leaderboard", (req, res) => {
     const sql = `
       SELECT username, COUNT(DISTINCT square_id) as territory_count
@@ -254,6 +254,23 @@ app.get("/api/leaderboard", (req, res) => {
       res.json({ success: true, leaderboard: results.rows });
     });
   });
+
+  app.get("/api/extended-square-leaderboard", async (req, res) => {
+    try {
+        const result = await db.query(`
+            SELECT username, COUNT(DISTINCT square_id) AS territory_owned_count
+            FROM square_ownership
+            GROUP BY username
+            ORDER BY territory_owned_count DESC
+            LIMIT 10
+        `);
+
+        res.json({ success: true, leaderboard: result.rows });
+    } catch (err) {
+        console.error("Database error:", err.message);
+        res.status(500).json({ success: false, message: "Internal server error." });
+    }
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
