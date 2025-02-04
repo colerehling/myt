@@ -179,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         .addTo(map)
                         .bindPopup(`<strong>${entry.username}</strong><br>${entry.text}`);
                     hideSpinner();
-                    alert("Congrats on your pee!");
+                    alert("🎉Congrats on your pee!🎉");
                     entryText.value = "";
 
                     localStorage.setItem(lastEntryKey, Date.now().toString());
