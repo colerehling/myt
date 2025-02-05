@@ -56,7 +56,8 @@ body {
     height: 500px;
     margin: 20px 0;
     border-radius: 8px;
-    border: 1px solid #ccc;
+    border: 2px solid #fdc43f;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* Form Element Styles */
@@ -75,11 +76,14 @@ button {
     color: #fff;
     border: none;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
 }
 
 button:hover {
     background-color: #f7b21e;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
 }
 
 /* Link Styles */
@@ -109,7 +113,8 @@ a:hover {
     background-color: #f4f4f5cb;
     padding: 10px 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(5px);
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -374,9 +379,9 @@ body {
 }
 
 .entry-box {
-    background: white;
+    background: linear-gradient(135deg, #fff 0%, #fff7e6 100%);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     padding: 15px;
     width: 90%;
     max-width: 400px;
@@ -385,12 +390,12 @@ body {
 }
 
 .entry-box h3 {
-    margin: 0;
+    margin-bottom: 8px;
     color: #333;
 }
 
 .entry-box p {
-    margin: 5px 0;
+    line-height: 1.5;
     font-size: 14px;
     color: #666;
 }
@@ -406,4 +411,18 @@ body {
     margin: 10px auto;
     width: 80%;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    animation: pulseEffect 4s infinite;
 }
+
+@keyframes pulseEffect {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
