@@ -35,7 +35,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the MYT API!");
 });
 
-const bcrypt = require("bcrypt");
 const db = require("./db"); // Assuming you have a db connection setup
 
 // Register API
