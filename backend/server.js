@@ -35,8 +35,6 @@ app.get("/", (req, res) => {
   res.send("Welcome to the MYT API!");
 });
 
-const db = require("./db"); // Assuming you have a db connection setup
-
 // Register API
 app.post("/api/register", async (req, res) => {
   const { email, username, password, inviter } = req.body;
