@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mark Your Territory - Monthly Challenges</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="container" >
+        <div id="app">
+            <img src="banner.jpg" alt="Banner image" class="banner-image">
+            
+            <div class="navbar" style="margin-bottom: 20px;">
+                <div class="nav-links">
+                    <a href="home.html">HOME</a>
+                    <a href="global.html">GLOBAL</a>
+                    <a href="profile.html">PROFILE</a>
+                    <a href="leaderboard.html">LEADERBOARD</a>
+                    <a href="social.html">SOCIAL</a>
+                </div>
+                <div class="hamburger-menu">
+                    <button id="hamburger-button">☰</button>
+                    <div id="menu-links" class="menu-links">
+                        <a href="how_to.html">HOW TO</a>
+                        <a href="about.html">ABOUT</a>
+                        <a href="FAQ.html">FAQ</a>
+                        <a href="contact.html">CONTACT</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-container">
+                <h2>Monthly Challenges</h2>
+                <div>Starting this month at Mark Your Territory, you and your friends will be competing in different challenges to earn marks toward the monthly Hall of Fame. </div>
+                <h2>February Challenge</h2>
+                <div>Invite your friends! For every friend you invite, you get a point towards your total. The person with the most points by the end of the month wins and gets to be featured on the February Hall of Fame. When you invite friends, be sure to have them put your username in upon registration. Once they mark their first territory, you will be awarded a point. We are taking invitees from January as well as February. All past invitations have been logged. Good luck! </div>
+            </div>
+
+            <div class="leaderboard-container">
+                <h2>Top Inviters Leaderboard</h2>
+                <table id="invite-leaderboard">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>User</th>
+                            <th>Invites</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Leaderboard data will be inserted here dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>  
+    <script src="monthly.js"></script>
+</body>
+</html>

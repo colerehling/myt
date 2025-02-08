@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const email = document.getElementById("reg-email").value;
         const username = document.getElementById("reg-username").value;
         const password = document.getElementById("reg-password").value;
+        const inviter = document.getElementById("inviter").value || null;
 
         // Validate fields before sending
         if (!email || !username || !password) {
@@ -54,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const response = await fetch(`${API_BASE_URL}/register`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, username, password }),
+                body: JSON.stringify({ email, username, password, inviter }),
             });
 
             if (!response.ok) {
