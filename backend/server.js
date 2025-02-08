@@ -35,8 +35,12 @@ app.get("/", (req, res) => {
   res.send("Welcome to the MYT API!");
 });
 
+const bcrypt = require("bcrypt");
+const db = require("./db"); // Assuming you have a db connection setup
+
+// Register API
 app.post("/api/register", async (req, res) => {
-  const { email, username, password } = req.body;
+  const { email, username, password, inviter } = req.body;
 
   if (!email || !username || !password) {
     return res.status(400).json({ success: false, message: "All fields are required." });
@@ -57,55 +61,74 @@ app.post("/api/register", async (req, res) => {
 
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    db.query("SELECT * FROM users WHERE email = $1", [email], (err, results) => {
-      if (err) {
-        console.error("Database error:", err.message);
-        return res.status(500).json({ success: false, message: "Internal server error." });
+
+    // Check if email already exists
+    const emailCheck = await db.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (emailCheck.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "Email already exists." });
+    }
+
+    // Check if username already exists (case-insensitive check)
+    const usernameCheck = await db.query("SELECT * FROM users WHERE LOWER(username) = LOWER($1)", [username]);
+    if (usernameCheck.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "Username already exists." });
+    }
+
+    // Insert new user into the users table (preserving case)
+    await db.query(
+      "INSERT INTO users (email, username, password) VALUES ($1, $2, $3)",
+      [email, username, hashedPassword]
+    );
+
+    // Handle inviter logic if provided
+    if (inviter) {
+      const inviterCheck = await db.query("SELECT username FROM users WHERE LOWER(username) = LOWER($1)", [inviter]);
+
+      if (inviterCheck.rows.length > 0) {
+        await db.query(
+          "INSERT INTO invites (inviter, invitee, has_entry) VALUES ($1, $2, 'N') ON CONFLICT (invitee) DO NOTHING",
+          [inviterCheck.rows[0].username, username]
+        );
       }
-      if (results.rows.length > 0) {
-        return res.status(400).json({ success: false, message: "Email already exists." });
-      }
-      db.query("SELECT * FROM users WHERE username = $1", [username], (err, results) => {
-        if (err) {
-          console.error("Database error:", err.message);
-          return res.status(500).json({ success: false, message: "Internal server error." });
-        }
-        if (results.rows.length > 0) {
-          return res.status(400).json({ success: false, message: "Username already exists." });
-        }
-        db.query("INSERT INTO users (email, username, password) VALUES ($1, $2, $3)", [email, username, hashedPassword], (err) => {
-          if (err) {
-            console.error("Database error:", err.message);
-            return res.status(500).json({ success: false, message: "Internal server error." });
-          }
-          res.json({ success: true, message: "Registration successful!" });
-        });
-      });
-    });
+    }
+
+    res.json({ success: true, message: "Registration successful!" });
   } catch (err) {
     console.error("Error during registration:", err.message);
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
 
-app.post("/api/login", (req, res) => {
+// Login API (case-insensitive username matching)
+app.post("/api/login", async (req, res) => {
   const { username, password } = req.body;
-  db.query("SELECT * FROM users WHERE username = $1", [username], async (err, results) => {
-    if (err) {
-      console.error("Database error:", err.message);
-      return res.status(500).json({ success: false, message: "Internal server error." });
-    }
-    if (results.rows.length === 0) {
+
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: "All fields are required." });
+  }
+
+  try {
+    // Find the user case-insensitively but return the original case
+    const userCheck = await db.query("SELECT * FROM users WHERE LOWER(username) = LOWER($1)", [username]);
+
+    if (userCheck.rows.length === 0) {
       return res.status(401).json({ success: false, message: "Invalid username or password." });
     }
-    const user = results.rows[0];
+
+    const user = userCheck.rows[0];
     const passwordMatch = await bcrypt.compare(password, user.password);
+
     if (!passwordMatch) {
       return res.status(401).json({ success: false, message: "Invalid username or password." });
     }
-    res.json({ success: true });
-  });
+
+    res.json({ success: true, username: user.username });
+  } catch (err) {
+    console.error("Error during login:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
 });
+
 
 async function getStateFromCoords(latitude, longitude) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
@@ -285,6 +308,26 @@ app.get("/api/recent-entries", async (req, res) => {
       console.error("Database error:", err.message);
       res.status(500).json({ success: false, message: "Internal server error." });
   }
+});
+
+app.get("/api/invite-leaderboard", (req, res) => {
+  const sql = `
+    SELECT inviter, COUNT(*) AS invite_count
+    FROM invites
+    WHERE has_entry = 'Y'
+    GROUP BY inviter
+    ORDER BY invite_count DESC
+    LIMIT 10
+  `;
+
+  db.query(sql, (err, results) => {
+      if (err) {
+          console.error("Database error:", err.message);
+          return res.status(500).json({ success: false, message: "Internal server error." });
+      }
+
+      res.json({ success: true, leaderboard: results.rows });
+  });
 });
 
 
