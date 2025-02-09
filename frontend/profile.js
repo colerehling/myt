@@ -1,7 +1,8 @@
+const API_BASE_URL = "https://myt-27ol.onrender.com/api";  // Move this outside
+
 document.addEventListener("DOMContentLoaded", () => {
     const userDetailsDiv = document.getElementById("user-details");
     const currentUser = localStorage.getItem('currentUser');
-    const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
     if (!currentUser) {
         window.location.href = 'index.html';
@@ -108,3 +109,4 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
