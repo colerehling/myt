@@ -1,29 +1,5 @@
 const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
-async function checkUsernameChangeCooldown() {
-    const messageEl = document.getElementById("usernameChangeMessage");
-    const changeButton = document.getElementById("changeUsernameBtn");
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/username-change-info?username=${localStorage.getItem("currentUser")}`);
-        const data = await response.json();
-
-        if (data.success) {
-            const lastChangeDate = new Date(data.lastChangeDate);
-            const now = new Date();
-            const daysSinceLastChange = Math.floor((now - lastChangeDate) / (1000 * 60 * 60 * 24));
-
-            if (daysSinceLastChange < 30) {
-                const daysLeft = 30 - daysSinceLastChange;
-                messageEl.textContent = `You can change your username again in ${daysLeft} day(s).`;
-                changeButton.disabled = true;
-            }
-        }
-    } catch (error) {
-        console.error("Error checking username change cooldown:", error);
-    }
-}
-
 // Handle username change request
 document.getElementById("changeUsernameBtn").addEventListener("click", async () => {
     const newUsername = document.getElementById("newUsername").value.trim();
@@ -44,10 +20,10 @@ document.getElementById("changeUsernameBtn").addEventListener("click", async () 
 
         const data = await response.json();
         if (data.success) {
-            messageEl.textContent = "Username changed successfully! You can change it again in 30 days.";
+            messageEl.textContent = "Username changed successfully!";
             localStorage.setItem("currentUser", newUsername); // Update the localStorage
             document.getElementById("user-details").textContent = newUsername;
-            document.getElementById("changeUsernameBtn").disabled = true;
+            document.getElementById("changeUsernameBtn").disabled = true; // Optionally disable the button after change
         } else {
             messageEl.textContent = data.message;
         }
@@ -90,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .catch(error => console.error('Error fetching user entries:', error));
 
-    checkUsernameChangeCooldown();
+    // Removed cooldown check function
 });
 
 // Hamburger menu handling
@@ -108,4 +84,5 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
 
