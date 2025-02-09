@@ -1,42 +1,5 @@
-const API_BASE_URL = "https://myt-27ol.onrender.com/api";  // Move this outside
+const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
-document.addEventListener("DOMContentLoaded", () => {
-    const userDetailsDiv = document.getElementById("user-details");
-    const currentUser = localStorage.getItem('currentUser');
-
-    if (!currentUser) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    userDetailsDiv.textContent = `${currentUser}`;
-
-    fetch(`${API_BASE_URL}/entries?username=${currentUser}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const entries = data.entries;
-                const entriesCount = entries.length;
-                const lastEntry = entries.reduce((latest, current) => 
-                    new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest, entries[0]
-                );
-
-                const lastEntryDate = lastEntry ? new Date(lastEntry.timestamp) : null;
-                const totalEntries = entries.length > 0 ? entries[0].total_entries : 0;
-
-                document.getElementById("entriesCount").textContent = entriesCount;
-                document.getElementById("lastEntryDate").textContent = lastEntryDate ? lastEntryDate.toLocaleString() : "No entries";
-                document.getElementById("totalEntries").textContent = totalEntries;
-            } else {
-                console.error('Failed to fetch user entries:', data.message);
-            }
-        })
-        .catch(error => console.error('Error fetching user entries:', error));
-
-    checkUsernameChangeCooldown();
-});
-
-// Function to check username change cooldown
 async function checkUsernameChangeCooldown() {
     const messageEl = document.getElementById("usernameChangeMessage");
     const changeButton = document.getElementById("changeUsernameBtn");
@@ -82,7 +45,7 @@ document.getElementById("changeUsernameBtn").addEventListener("click", async () 
         const data = await response.json();
         if (data.success) {
             messageEl.textContent = "Username changed successfully! You can change it again in 30 days.";
-            localStorage.setItem("currentUser", newUsername);
+            localStorage.setItem("currentUser", newUsername); // Update the localStorage
             document.getElementById("user-details").textContent = newUsername;
             document.getElementById("changeUsernameBtn").disabled = true;
         } else {
@@ -92,6 +55,42 @@ document.getElementById("changeUsernameBtn").addEventListener("click", async () 
         messageEl.textContent = "Error updating username.";
         console.error("Error:", error);
     }
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    const userDetailsDiv = document.getElementById("user-details");
+    const currentUser = localStorage.getItem('currentUser');
+
+    if (!currentUser) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    userDetailsDiv.textContent = `${currentUser}`;
+
+    fetch(`${API_BASE_URL}/entries?username=${currentUser}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const entries = data.entries;
+                const entriesCount = entries.length;
+                const lastEntry = entries.reduce((latest, current) => 
+                    new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest, entries[0]
+                );
+
+                const lastEntryDate = lastEntry ? new Date(lastEntry.timestamp) : null;
+                const totalEntries = entries.length > 0 ? entries[0].total_entries : 0;
+
+                document.getElementById("entriesCount").textContent = entriesCount;
+                document.getElementById("lastEntryDate").textContent = lastEntryDate ? lastEntryDate.toLocaleString() : "No entries";
+                document.getElementById("totalEntries").textContent = totalEntries;
+            } else {
+                console.error('Failed to fetch user entries:', data.message);
+            }
+        })
+        .catch(error => console.error('Error fetching user entries:', error));
+
+    checkUsernameChangeCooldown();
 });
 
 // Hamburger menu handling

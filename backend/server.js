@@ -327,6 +327,29 @@ app.get("/api/invite-leaderboard", (req, res) => {
   });
 });
 
+app.get("/api/username-change-info", async (req, res) => {
+  const { username } = req.query;
+
+  if (!username) {
+      return res.status(400).json({ success: false, message: "Username is required." });
+  }
+
+  try {
+      // Query the database for the last username change
+      const userQuery = await db.query("SELECT last_username_change FROM users WHERE username = $1", [username]);
+
+      if (userQuery.rows.length === 0) {
+          return res.status(404).json({ success: false, message: "User not found." });
+      }
+
+      const lastChangeDate = userQuery.rows[0].last_username_change;
+      res.json({ success: true, lastChangeDate });
+  } catch (err) {
+      console.error("Error fetching username change info:", err.message);
+      res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+
 app.post("/api/change-username", async (req, res) => {
   const { currentUsername, newUsername } = req.body;
 
