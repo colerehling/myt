@@ -21,12 +21,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 );
 
                 const lastEntryDate = lastEntry ? new Date(lastEntry.timestamp) : null;
-                const streak = calculateStreak(entries);
                 const totalEntries = entries.length > 0 ? entries[0].total_entries : 0;
 
                 document.getElementById("entriesCount").textContent = entriesCount;
                 document.getElementById("lastEntryDate").textContent = lastEntryDate ? lastEntryDate.toLocaleString() : "No entries";
-                document.getElementById("streak").textContent = streak;
                 document.getElementById("totalEntries").textContent = totalEntries;
             } else {
                 console.error('Failed to fetch user entries:', data.message);
