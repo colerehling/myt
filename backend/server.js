@@ -330,6 +330,7 @@ app.get("/api/invite-leaderboard", (req, res) => {
 app.post("/api/change-username", async (req, res) => {
   const { currentUsername, newUsername } = req.body;
 
+  // Input validation
   if (!currentUsername || !newUsername) {
       return res.status(400).json({ success: false, message: "Both current and new usernames are required." });
   }
@@ -364,26 +365,30 @@ app.post("/api/change-username", async (req, res) => {
           });
       }
 
-      // Begin transaction
+      // Begin transaction to ensure data consistency
       await db.query("BEGIN");
 
-      // Update username in all related tables
+      // Update username in users table and the timestamp of the last username change
       await db.query("UPDATE users SET username = $1, last_username_change = $2 WHERE username = $3", [newUsername, now, currentUsername]);
+
+      // Update username in related tables: map_entries, square_ownership, and invites
       await db.query("UPDATE map_entries SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
       await db.query("UPDATE square_ownership SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
       await db.query("UPDATE invites SET inviter = $1 WHERE inviter = $2", [newUsername, currentUsername]);
       await db.query("UPDATE invites SET invitee = $1 WHERE invitee = $2", [newUsername, currentUsername]);
 
-      // Commit transaction
+      // Commit transaction if all queries succeed
       await db.query("COMMIT");
 
       res.json({ success: true, message: "Username updated successfully." });
   } catch (err) {
+      // Rollback transaction in case of an error
       await db.query("ROLLBACK");
       console.error("Error updating username:", err.message);
       res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
+
 
 
 app.listen(PORT, () => {
