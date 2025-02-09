@@ -217,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Use the hash to generate a wider variety of colors
         const hue = Math.abs(hash) % 350; // Full spectrum of colors
-        const saturation = 40 + (Math.abs(hash) % 60); // Between 40% and 100%
+        const saturation = 35 + (Math.abs(hash) % 65); // Between 40% and 100%
         const lightness = 25 + (Math.abs(hash) % 60); // Between 25% and 75%
 
         return `hsla(${hue}, ${saturation}%, ${lightness}%, ${opacity})`;

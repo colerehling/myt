@@ -5,33 +5,31 @@ document.getElementById("changeUsernameBtn").addEventListener("click", async () 
     const newUsername = document.getElementById("newUsername").value.trim();
     const currentUsername = localStorage.getItem("currentUser");
     const messageEl = document.getElementById("usernameChangeMessage");
-
+  
     if (!newUsername) {
-        messageEl.textContent = "Please enter a new username.";
-        return;
+      messageEl.textContent = "Please enter a new username.";
+      return;
     }
-
+  
     try {
-        const response = await fetch(`${API_BASE_URL}/change-username`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ currentUsername, newUsername }),
-        });
-
-        const data = await response.json();
-        if (data.success) {
-            messageEl.textContent = "Username changed successfully!";
-            localStorage.setItem("currentUser", newUsername); // Update the localStorage
-            document.getElementById("user-details").textContent = newUsername;
-            document.getElementById("changeUsernameBtn").disabled = true; // Optionally disable the button after change
-        } else {
-            messageEl.textContent = data.message;
-        }
+      const response = await fetch(`${API_BASE_URL}/change-username`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentUsername, newUsername }),
+      });
+  
+      const data = await response.json();
+      if (data.success) {
+        messageEl.textContent = "Username changed successfully!";
+        localStorage.setItem("currentUser", newUsername); // Update stored username
+      } else {
+        messageEl.textContent = data.message;
+      }
     } catch (error) {
-        messageEl.textContent = "Error updating username.";
-        console.error("Error:", error);
+      console.error("Error changing username:", error);
+      messageEl.textContent = "An error occurred.";
     }
-});
+  });  
 
 document.addEventListener("DOMContentLoaded", () => {
     const userDetailsDiv = document.getElementById("user-details");
