@@ -40,13 +40,20 @@
             </div>
 
             <div class="profile-container" id="profileInfo">
-                <div class="user-details" id="user-details"></div>
+                <div class="user-details"><b>Username: </b><span id="user-details"></span></div>
                 <div class="profile-stats" style="text-align: left;">
                     <p><b>Total Entries: </b><span id="totalEntries"></span></p>
                     <p><b>Territories Peed in: </b><span id="entriesCount"></span></p>
                     <p><b>Last Entry Date: </b><span id="lastEntryDate"></span></p>
-                    <p><b>Streak: </b><span id="streak"> day(s)</span></p>
                 </div>
+            </div>
+
+            <div class="change-username">
+                <h3>Change Username</h3>
+                <div class="username-change-info"> You can only change usernames once every 30 days</div>
+                <input type="text" id="newUsername" placeholder="Enter new username">
+                <button id="changeUsernameBtn">Change Username</button>
+                <p id="usernameChangeMessage"></p>
             </div>
         </div>
     </div>

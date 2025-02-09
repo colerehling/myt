@@ -4,25 +4,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
     if (!currentUser) {
-        // Redirect to login page if not logged in
         window.location.href = 'index.html';
-        return; // Stop further execution
+        return;
     }
 
-    // Display the username
     userDetailsDiv.textContent = `${currentUser}`;
 
-    // Fetch user stats
     fetch(`${API_BASE_URL}/entries?username=${currentUser}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 const entries = data.entries;
                 const entriesCount = entries.length;
-                // Find the most recent entry
-                const lastEntry = entries.reduce((latest, current) => {
-                    return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
-                }, entries[0]);
+                const lastEntry = entries.reduce((latest, current) => 
+                    new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest, entries[0]
+                );
 
                 const lastEntryDate = lastEntry ? new Date(lastEntry.timestamp) : null;
                 const streak = calculateStreak(entries);
@@ -36,60 +32,81 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error('Failed to fetch user entries:', data.message);
             }
         })
-        .catch(error => {
-            console.error('Error fetching user entries:', error);
-        });
+        .catch(error => console.error('Error fetching user entries:', error));
+
+    checkUsernameChangeCooldown();
 });
 
-// Function to calculate the streak of consecutive days with entries
-function calculateStreak(entries) {
-    if (entries.length === 0) return 0;
+// Function to check username change cooldown
+async function checkUsernameChangeCooldown() {
+    const messageEl = document.getElementById("usernameChangeMessage");
+    const changeButton = document.getElementById("changeUsernameBtn");
 
-    // Sort entries by timestamp in descending order (most recent first)
-    entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    let streak = 1;
-    let currentDate = new Date(entries[0].timestamp);
-    currentDate.setHours(0, 0, 0, 0);
+    try {
+        const response = await fetch(`${API_BASE_URL}/username-change-info?username=${localStorage.getItem("currentUser")}`);
+        const data = await response.json();
 
-    for (let i = 1; i < entries.length; i++) {
-        const entryDate = new Date(entries[i].timestamp);
-        entryDate.setHours(0, 0, 0, 0);
+        if (data.success) {
+            const lastChangeDate = new Date(data.lastChangeDate);
+            const now = new Date();
+            const daysSinceLastChange = Math.floor((now - lastChangeDate) / (1000 * 60 * 60 * 24));
 
-        const diffDays = (currentDate - entryDate) / (1000 * 60 * 60 * 24);
-        if (diffDays === 1) {
-            streak++;
-            currentDate = entryDate;
-        } else if (diffDays === 0) {
-            // Same day, continue to next entry
-            continue;
-        } else {
-            // Streak is broken
-            break;
+            if (daysSinceLastChange < 30) {
+                const daysLeft = 30 - daysSinceLastChange;
+                messageEl.textContent = `You can change your username again in ${daysLeft} day(s).`;
+                changeButton.disabled = true;
+            }
         }
+    } catch (error) {
+        console.error("Error checking username change cooldown:", error);
     }
-
-    return streak;
 }
 
-// JavaScript to toggle the hamburger menu
+// Handle username change request
+document.getElementById("changeUsernameBtn").addEventListener("click", async () => {
+    const newUsername = document.getElementById("newUsername").value.trim();
+    const currentUsername = localStorage.getItem("currentUser");
+    const messageEl = document.getElementById("usernameChangeMessage");
+
+    if (!newUsername) {
+        messageEl.textContent = "Please enter a new username.";
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/change-username`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ currentUsername, newUsername }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            messageEl.textContent = "Username changed successfully! You can change it again in 30 days.";
+            localStorage.setItem("currentUser", newUsername);
+            document.getElementById("user-details").textContent = newUsername;
+            document.getElementById("changeUsernameBtn").disabled = true;
+        } else {
+            messageEl.textContent = data.message;
+        }
+    } catch (error) {
+        messageEl.textContent = "Error updating username.";
+        console.error("Error:", error);
+    }
+});
+
+// Hamburger menu handling
 document.addEventListener("DOMContentLoaded", () => {
     const hamburgerButton = document.getElementById("hamburger-button");
     const menuLinks = document.getElementById("menu-links");
 
     hamburgerButton.addEventListener("click", () => {
-        // Toggle menu visibility
-        if (menuLinks.style.display === "block") {
-            menuLinks.style.display = "none";
-        } else {
-            menuLinks.style.display = "block";
-        }
+        menuLinks.style.display = menuLinks.style.display === "block" ? "none" : "block";
     });
 
-    // Close menu when clicking outside
     document.addEventListener("click", (event) => {
         if (!menuLinks.contains(event.target) && !hamburgerButton.contains(event.target)) {
             menuLinks.style.display = "none";
         }
     });
 });
-

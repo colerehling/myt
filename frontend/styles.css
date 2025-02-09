@@ -446,3 +446,7 @@ label {
     text-decoration: underline;
     background-color: #f0f0f0; /* Light gray highlight on hover */
 }
+
+.username-change-info {
+    font-size: 0.8em; /* Adjust the size as needed */
+}

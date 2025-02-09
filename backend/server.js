@@ -327,6 +327,64 @@ app.get("/api/invite-leaderboard", (req, res) => {
   });
 });
 
+app.post("/api/change-username", async (req, res) => {
+  const { currentUsername, newUsername } = req.body;
+
+  if (!currentUsername || !newUsername) {
+      return res.status(400).json({ success: false, message: "Both current and new usernames are required." });
+  }
+
+  if (newUsername.length < 4 || newUsername.length > 30) {
+      return res.status(400).json({ success: false, message: "Username must be between 4 and 30 characters long." });
+  }
+
+  try {
+      // Check if the new username already exists
+      const usernameCheck = await db.query("SELECT * FROM users WHERE LOWER(username) = LOWER($1)", [newUsername]);
+      if (usernameCheck.rows.length > 0) {
+          return res.status(400).json({ success: false, message: "Username already taken." });
+      }
+
+      // Fetch last username change date
+      const userQuery = await db.query("SELECT last_username_change FROM users WHERE username = $1", [currentUsername]);
+
+      if (userQuery.rows.length === 0) {
+          return res.status(404).json({ success: false, message: "User not found." });
+      }
+
+      const lastChangeDate = userQuery.rows[0].last_username_change;
+      const now = new Date();
+      const daysSinceLastChange = lastChangeDate ? Math.floor((now - new Date(lastChangeDate)) / (1000 * 60 * 60 * 24)) : 31;
+
+      // Enforce 30-day cooldown
+      if (daysSinceLastChange < 30) {
+          return res.status(403).json({ 
+              success: false, 
+              message: `You can change your username again in ${30 - daysSinceLastChange} day(s).` 
+          });
+      }
+
+      // Begin transaction
+      await db.query("BEGIN");
+
+      // Update username in all related tables
+      await db.query("UPDATE users SET username = $1, last_username_change = $2 WHERE username = $3", [newUsername, now, currentUsername]);
+      await db.query("UPDATE map_entries SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
+      await db.query("UPDATE square_ownership SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
+      await db.query("UPDATE invites SET inviter = $1 WHERE inviter = $2", [newUsername, currentUsername]);
+      await db.query("UPDATE invites SET invitee = $1 WHERE invitee = $2", [newUsername, currentUsername]);
+
+      // Commit transaction
+      await db.query("COMMIT");
+
+      res.json({ success: true, message: "Username updated successfully." });
+  } catch (err) {
+      await db.query("ROLLBACK");
+      console.error("Error updating username:", err.message);
+      res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
