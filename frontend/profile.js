@@ -5,31 +5,36 @@ document.getElementById("changeUsernameBtn").addEventListener("click", async () 
     const newUsername = document.getElementById("newUsername").value.trim();
     const currentUsername = localStorage.getItem("currentUser");
     const messageEl = document.getElementById("usernameChangeMessage");
-  
+
     if (!newUsername) {
-      messageEl.textContent = "Please enter a new username.";
-      return;
+        messageEl.textContent = "Please enter a new username.";
+        return;
     }
-  
+
+    console.log("Sending request to change username:", { currentUsername, newUsername });
+
     try {
-      const response = await fetch(`${API_BASE_URL}/change-username`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currentUsername, newUsername }),
-      });
-  
-      const data = await response.json();
-      if (data.success) {
-        messageEl.textContent = "Username changed successfully!";
-        localStorage.setItem("currentUser", newUsername); // Update stored username
-      } else {
-        messageEl.textContent = data.message;
-      }
+        const response = await fetch(`${API_BASE_URL}/change-username`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ currentUsername, newUsername }),
+        });
+
+        const data = await response.json();
+        console.log("API response:", data);
+
+        if (data.success) {
+            messageEl.textContent = "Username changed successfully!";
+            localStorage.setItem("currentUser", newUsername); // Update stored username
+            document.getElementById("user-details").textContent = newUsername; // Update UI
+        } else {
+            messageEl.textContent = data.message || "Failed to change username.";
+        }
     } catch (error) {
-      console.error("Error changing username:", error);
-      messageEl.textContent = "An error occurred.";
+        console.error("Error changing username:", error);
+        messageEl.textContent = "An error occurred.";
     }
-  });  
+}); 
 
 document.addEventListener("DOMContentLoaded", () => {
     const userDetailsDiv = document.getElementById("user-details");
