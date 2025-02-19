@@ -348,12 +348,13 @@ a:hover {
 
 /* Username Tips */
 .username-tips {
+    width: 80%;
     text-align: left;
-    background: #fff;
+    background-color: #ffcc00;
     padding: 10px; /* Smaller padding around the words */
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    margin-top: 20px; /* Larger margin between the link and the tips box */
+    margin: 10px auto 0; /* Larger margin between the link and the tips box */
 }
 
 .username-tips p, .username-tips ul {
