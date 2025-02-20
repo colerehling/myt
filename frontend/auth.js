@@ -3,7 +3,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const registerForm = document.getElementById("register-form");
     const showRegister = document.getElementById("show-register");
     const showLogin = document.getElementById("show-login");
-
+    const spinnerOverlay = document.getElementById("spinner-overlay");
     const API_BASE_URL = "https://myt-27ol.onrender.com/api";
 
     showRegister.addEventListener("click", () => {
@@ -94,6 +94,8 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         const input = document.getElementById("usernameOrEmail").value; // Combine username/email field
         const password = document.getElementById("password").value;
+
+        spinnerOverlay.style.display = 'flex';
     
         // Determine if the input is an email or username by checking if it's a valid email
         const isEmail = input.includes('@') && input.includes('.'); // Basic email validation
@@ -122,6 +124,9 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (err) {
             console.error("Error during login:", err);
             alert("Failed to login. Please try again.");
+        } finally {
+            // Hide the spinner once the login process is done
+            spinnerOverlay.style.display = 'none';
         }
     });
     
