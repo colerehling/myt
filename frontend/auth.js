@@ -92,25 +92,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const username = document.getElementById("username").value;
+        const input = document.getElementById("usernameOrEmail").value; // Combine username/email field
         const password = document.getElementById("password").value;
-
+    
+        // Determine if the input is an email or username by checking if it's a valid email
+        const isEmail = input.includes('@') && input.includes('.'); // Basic email validation
+    
         try {
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password }),
+                body: JSON.stringify({
+                    [isEmail ? "email" : "username"]: input, // Send email or username based on input type
+                    password
+                }),
             });
-
+    
             if (!response.ok) {
                 const error = await response.json();
                 alert(error.message);
                 return;
             }
-
-            // Store the username in localStorage or sessionStorage
-            localStorage.setItem('currentUser', username);
-
+    
+            // Store the username or email in localStorage or sessionStorage
+            localStorage.setItem('currentUser', input);
+    
             // Redirect to home page
             window.location.href = 'home.html';
         } catch (err) {
@@ -118,5 +124,6 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Failed to login. Please try again.");
         }
     });
+    
 });
 

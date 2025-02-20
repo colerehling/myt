@@ -139,34 +139,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function loadData() {
         try {
-            // Fetch all data in parallel
-            const [entriesResponse, squaresResponse, usersCountResponse, totalMarksResponse, statesCountResponse] = await Promise.all([
+            const [entriesResponse, squaresResponse, usersCountResponse, totalMarksResponse, statesCountResponse, countriesCountResponse] = await Promise.all([
                 fetch(`${API_BASE_URL}/entries`),
                 fetch(`${API_BASE_URL}/squares`),
                 fetch(`${API_BASE_URL}/users/count`),
                 fetch(`${API_BASE_URL}/entries/count`),
-                fetch(`${API_BASE_URL}/entries/states/count`)
+                fetch(`${API_BASE_URL}/entries/states/count`),
+                fetch(`${API_BASE_URL}/entries/countries/count`) 
             ]);
-
+    
             // Handle potential errors
-            if (!entriesResponse.ok || !squaresResponse.ok || !usersCountResponse.ok || !totalMarksResponse.ok || !statesCountResponse.ok) {
-                console.error("Error loading data:", await entriesResponse.text(), await squaresResponse.text(), await statesCountResponse.text());
+            if (!entriesResponse.ok || !squaresResponse.ok || !usersCountResponse.ok || !totalMarksResponse.ok || !statesCountResponse.ok || !countriesCountResponse.ok) {
+                console.error("Error loading data:", await entriesResponse.text(), await squaresResponse.text(), await statesCountResponse.text(), await countriesCountResponse.text());
                 return;
             }
-
+    
             // Parse JSON responses
             const { entries } = await entriesResponse.json();
             const { squares } = await squaresResponse.json();
             const { userCount } = await usersCountResponse.json();
             const { totalMarks } = await totalMarksResponse.json();
             const { stateCount } = await statesCountResponse.json();
-
+            const { countryCount } = await countriesCountResponse.json(); 
+    
             // Update UI with fetched data
             document.getElementById("entriesCount").textContent = entries.length;
             document.getElementById("usersCount").textContent = userCount;
             document.getElementById("totalMarks").textContent = totalMarks;
             document.getElementById("statesCount").textContent = stateCount;
-
+            document.getElementById("countriesCount").textContent = countryCount;
+    
             // Add markers for entries
             entries.forEach(entry => {
                 L.marker([entry.latitude, entry.longitude])

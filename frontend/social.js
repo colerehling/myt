@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             entryBox.innerHTML = `
                 <h3>${entry.username}</h3>
                 <p><strong>Time:</strong> ${new Date(entry.timestamp).toLocaleString()}</p>
-                <p><strong>State:</strong> ${entry.state || "Unknown"}</p>
+                <p><strong>Location:</strong> ${entry.state || "Unknown"}</p>
                 <p>${entry.text}</p>
             `;
 

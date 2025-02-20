@@ -111,7 +111,7 @@ a:hover {
     justify-content: space-between;
     align-items: center;
     background-color: #f4f4f5cb;
-    padding: 10px 20px;
+    padding: 5px 20px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     backdrop-filter: blur(5px);
