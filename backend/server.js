@@ -127,17 +127,22 @@ app.post("/api/login", async (req, res) => {
 });
 
 
-async function getStateFromCoords(latitude, longitude) {
+async function getLocationFromCoords(latitude, longitude) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
   try {
     const response = await fetch(url);
     const data = await response.json();
-    return data.address?.state || "Unknown"; // Return state name or "Unknown" if not found
+
+    const state = data.address?.state || "";
+    const country = data.address?.country || "Unknown"; // Get country as well
+
+    return { state, country };
   } catch (error) {
-    console.error("Error fetching state:", error);
-    return "Unknown";
+    console.error("Error fetching state and country:", error);
+    return { state: "Unknown", country: "Unknown" }; // Default values
   }
 }
+
 
 app.get("/api/users/count", async (req, res) => {
   try {
@@ -178,7 +183,7 @@ app.get("/api/entries", async (req, res) => {
 app.post("/api/entries", async (req, res) => {
   const { username, text, lat, lng } = req.body;
 
-  const state = await getStateFromCoords(lat, lng);
+  const { state, country } = await getLocationFromCoords(lat, lng);
   const squareSize = 0.01;
   const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
 
@@ -194,8 +199,8 @@ app.post("/api/entries", async (req, res) => {
     );
 
     await db.query(
-      "INSERT INTO map_entries (username, square_id, latitude, longitude, text, state) VALUES ($1, $2, $3, $4, $5, $6)",
-      [username, squareId, lat, lng, text, state]
+      "INSERT INTO map_entries (username, square_id, latitude, longitude, text, state, country) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+      [username, squareId, lat, lng, text, state, country]
     );
 
     res.json({ success: true });
@@ -295,17 +300,28 @@ app.get("/api/leaderboard", (req, res) => {
 app.get("/api/recent-entries", async (req, res) => {
   try {
       const result = await db.query(`
-          SELECT username, timestamp, state, text 
+          SELECT username, timestamp, state, country, text 
           FROM map_entries 
           ORDER BY timestamp DESC 
           LIMIT 10
       `);
-      res.json({ success: true, entries: result.rows });
+
+      // Modify the result to check if the state is blank and if so, display the country
+      const entries = result.rows.map(entry => {
+          // If state is blank, use the country instead
+          if (!entry.state || entry.state.trim() === '') {
+              entry.state = entry.country; // Replace state with country if state is blank
+          }
+          return entry;
+      });
+
+      res.json({ success: true, entries: entries });
   } catch (err) {
       console.error("Database error:", err.message);
       res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
+
 
 app.get("/api/invite-leaderboard", (req, res) => {
   const sql = `
