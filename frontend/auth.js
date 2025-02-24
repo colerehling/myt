@@ -16,26 +16,22 @@ document.addEventListener("DOMContentLoaded", () => {
         loginForm.style.display = "block";
     });
 
-    document.getElementById('show-register').addEventListener('click', function() {
-        document.getElementById('login-form').style.display = 'none';
-        document.getElementById('register-container').style.display = 'block';
-    });
-
-    document.getElementById('show-login').addEventListener('click', function() {
-        document.getElementById('register-container').style.display = 'none';
-        document.getElementById('login-form').style.display = 'block';
-    });
-
     registerForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const email = document.getElementById("reg-email").value;
-        const username = document.getElementById("reg-username").value;
+        const email = document.getElementById("reg-email").value.trim();
+        const username = document.getElementById("reg-username").value.trim().toLowerCase(); // Normalize username to lowercase
         const password = document.getElementById("reg-password").value;
-        const inviter = document.getElementById("inviter").value || null;
+        const inviter = document.getElementById("inviter").value.trim() || null;
 
         // Validate fields before sending
         if (!email || !username || !password) {
             alert("All fields are required.");
+            return;
+        }
+
+        // Ensure no spaces in username, email, or password
+        if (/\s/.test(username) || /\s/.test(email) || /\s/.test(password)) {
+            alert("Username, email, and password cannot contain spaces.");
             return;
         }
 
@@ -79,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Store the username in localStorage or sessionStorage
+            // Store the username in localStorage
             localStorage.setItem('currentUser', username);
 
             // Redirect to the how_to page
@@ -92,43 +88,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const input = document.getElementById("usernameOrEmail").value; // Combine username/email field
+        const input = document.getElementById("usernameOrEmail").value.trim().toLowerCase(); // Normalize input to lowercase
         const password = document.getElementById("password").value;
 
+        // Prevent spaces in input and password
+        if (/\s/.test(input) || /\s/.test(password)) {
+            alert("Username, email, and password cannot contain spaces.");
+            return;
+        }
+
         spinnerOverlay.style.display = 'flex';
-    
-        // Determine if the input is an email or username by checking if it's a valid email
-        const isEmail = input.includes('@') && input.includes('.'); // Basic email validation
-    
+
+        const isEmail = input.includes('@') && input.includes('.'); 
+
         try {
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    [isEmail ? "email" : "username"]: input, // Send email or username based on input type
+                    [isEmail ? "email" : "username"]: input,
                     password
                 }),
             });
-    
+
             if (!response.ok) {
                 const error = await response.json();
                 alert(error.message);
                 return;
             }
-    
-            // Store the username or email in localStorage or sessionStorage
+
             localStorage.setItem('currentUser', input);
-    
-            // Redirect to home page
             window.location.href = 'home.html';
         } catch (err) {
             console.error("Error during login:", err);
             alert("Failed to login. Please try again.");
         } finally {
-            // Hide the spinner once the login process is done
             spinnerOverlay.style.display = 'none';
         }
     });
-    
-});
 
+});
