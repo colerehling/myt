@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     registerForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         const email = document.getElementById("reg-email").value.trim();
-        const username = document.getElementById("reg-username").value.trim().toLowerCase(); // Normalize username to lowercase
+        const username = document.getElementById("reg-username").value.trim(); // Keep case sensitivity
         const password = document.getElementById("reg-password").value;
         const inviter = document.getElementById("inviter").value.trim() || null;
 
@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Store the username in localStorage
+            // Store the exact username in localStorage
             localStorage.setItem('currentUser', username);
 
             // Redirect to the how_to page
@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const input = document.getElementById("usernameOrEmail").value.trim().toLowerCase(); // Normalize input to lowercase
+        const input = document.getElementById("usernameOrEmail").value.trim(); // Keep input as entered
         const password = document.getElementById("password").value;
 
         // Prevent spaces in input and password
@@ -106,7 +106,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    [isEmail ? "email" : "username"]: input,
+                    [isEmail ? "email" : "username"]: input, // Keep case-sensitive for username
                     password
                 }),
             });
@@ -128,3 +128,4 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 });
+
