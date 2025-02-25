@@ -300,6 +300,37 @@ app.get("/api/leaderboard", (req, res) => {
     });
   });
 
+  // server.js - Add new endpoint
+app.get("/api/voronoi-leaderboard", async (req, res) => {
+  try {
+      // Execute Python script and get output
+      const { exec } = require('child_process');
+      exec('python3 voronoi.py', (error, stdout, stderr) => {
+          if (error) {
+              console.error(`Error executing script: ${error}`);
+              return res.status(500).json({ success: false, message: "Error generating leaderboard" });
+          }
+
+          // Parse Python output
+          const leaderboard = stdout.split('\n')
+              .filter(line => line.includes(' square miles'))
+              .map(line => {
+                  const [username, area] = line.split(': ');
+                  return {
+                      username: username.trim(),
+                      territory_area: parseInt(area.replace(/[^0-9]/g, ''))
+                  };
+              })
+              .sort((a, b) => b.territory_area - a.territory_area);
+
+          res.json({ success: true, leaderboard });
+      });
+  } catch (err) {
+      console.error("Error processing Voronoi leaderboard:", err);
+      res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
   app.get("/api/extended-square-leaderboard", async (req, res) => {
     try {
         const result = await db.query(`
