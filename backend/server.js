@@ -300,70 +300,34 @@ app.get("/api/leaderboard", (req, res) => {
     });
   });
 
-  const { exec } = require('child_process');
-  const path = require('path');
-  
-  const { exec } = require('child_process');
-const path = require('path');
-
 app.get("/api/voronoi-leaderboard", async (req, res) => {
-    try {
-        // Use the correct absolute path to the Python script
-        const scriptPath = path.join(__dirname, 'frontend/voronoi.py');
+  try {
+      // Execute Python script and get output
+      const { exec } = require('child_process');
+      exec('python3 voronoi.py', (error, stdout, stderr) => {
+          if (error) {
+              console.error(`Error executing script: ${error}`);
+              return res.status(500).json({ success: false, message: "Error generating leaderboard" });
+          }
 
-        exec(`python3 ${scriptPath}`, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Error executing script: ${error.message}`);
-                console.error(`Script stderr: ${stderr}`);
-                return res.status(500).json({ 
-                    success: false, 
-                    message: "Error generating leaderboard",
-                    error: error.message,
-                    stderr: stderr
-                });
-            }
+          // Parse Python output
+          const leaderboard = stdout.split('\n')
+              .filter(line => line.includes(' square miles'))
+              .map(line => {
+                  const [username, area] = line.split(': ');
+                  return {
+                      username: username.trim(),
+                      territory_area: parseInt(area.replace(/[^0-9]/g, ''))
+                  };
+              })
+              .sort((a, b) => b.territory_area - a.territory_area);
 
-            if (stderr) {
-                console.error(`Script stderr: ${stderr}`);
-            }
-
-            // Parse Python output
-            try {
-                const leaderboard = stdout.split('\n')
-                    .filter(line => line.includes(' square miles'))
-                    .map(line => {
-                        const [username, area] = line.split(': ');
-                        return {
-                            username: username.trim(),
-                            territory_area: parseInt(area.replace(/[^0-9]/g, ''))
-                        };
-                    })
-                    .sort((a, b) => b.territory_area - a.territory_area);
-
-                if (leaderboard.length === 0) {
-                    throw new Error("No valid leaderboard data found");
-                }
-
-                res.json({ success: true, leaderboard });
-            } catch (parseError) {
-                console.error("Error parsing script output:", parseError);
-                console.error("Script output:", stdout);
-                res.status(500).json({ 
-                    success: false, 
-                    message: "Error parsing leaderboard data",
-                    error: parseError.message,
-                    output: stdout
-                });
-            }
-        });
-    } catch (err) {
-        console.error("Error processing Voronoi leaderboard:", err);
-        res.status(500).json({ 
-            success: false, 
-            message: "Internal server error",
-            error: err.message
-        });
-    }
+          res.json({ success: true, leaderboard });
+      });
+  } catch (err) {
+      console.error("Error processing Voronoi leaderboard:", err);
+      res.status(500).json({ success: false, message: "Internal server error" });
+  }
 });
 
   app.get("/api/extended-square-leaderboard", async (req, res) => {
