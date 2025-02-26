@@ -3,7 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchLeaderboard();
     fetchSquareLeaderboard();
     fetchExtendedSquareLeaderboard();
-    fetchVoronoiLeaderboard();
 });
 
 // Fetch main entries leaderboard
