@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        // Ensure no spaces in username, email, or password
+        // Prevent spaces in username, email, or password during registration
         if (/\s/.test(username) || /\s/.test(email) || /\s/.test(password)) {
             alert("Username, email, and password cannot contain spaces.");
             return;
@@ -91,12 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const input = document.getElementById("usernameOrEmail").value.trim(); // Keep input as entered
         const password = document.getElementById("password").value;
 
-        // Prevent spaces in input and password
-        if (/\s/.test(input) || /\s/.test(password)) {
-            alert("Username, email, and password cannot contain spaces.");
-            return;
-        }
-
         spinnerOverlay.style.display = 'flex';
 
         const isEmail = input.includes('@') && input.includes('.'); 
@@ -128,4 +122,3 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
 });
-
