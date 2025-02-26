@@ -54,26 +54,6 @@ function fetchExtendedSquareLeaderboard() {
         });
 }
 
-// Fetch Voronoi territory leaderboard
-function fetchVoronoiLeaderboard() {
-    fetch('https://myt-27ol.onrender.com/api/voronoi-leaderboard')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                displayExpandableLeaderboard(
-                    data.leaderboard, 
-                    'voronoi-leaderboard', 
-                    'Territory Area (sq mi)'
-                );
-            } else {
-                console.error('Failed to fetch Voronoi leaderboard:', data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching Voronoi leaderboard:', error);
-        });
-}
-
 // Display regular leaderboard
 function displayLeaderboard(leaderboard, sectionId, metricName) {
     const leaderboardElement = document.getElementById(sectionId);
