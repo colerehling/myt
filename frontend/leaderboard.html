@@ -8,53 +8,58 @@
 </head>
 
 <body>
-        <div id="container" >
-            <div id="app">
-                <img src="banner.jpg" alt="Banner image" class="banner-image">
-                
-                <div class="share-banner">
-                    🚀 Invite your friends! Gain points! 
-                    <a href="monthly.html" class="distinct-link">Click here to learn more about the monthly challenge</a> 🎮🔥
-                </div>
+    <div id="container">
+        <div id="app">
+            <img src="banner.jpg" alt="Banner image" class="banner-image">
 
-                <div class="navbar" style="margin-bottom: 20px;">
-                    <div class="nav-links">
-                        <a href="home.html">HOME</a>
-                        <a href="global.html">GLOBAL</a>
-                        <a href="profile.html">PROFILE</a>
-                        <a href="leaderboard.html">LEADERBOARD</a>
-                        <a href="social.html">SOCIAL</a>
+            <div class="share-banner">
+                🚀 Invite your friends! Gain points! 
+                <a href="monthly.html" class="distinct-link">Click here to learn more about the monthly challenge</a> 🎮🔥
+            </div>
+
+            <div class="navbar" style="margin-bottom: 20px;">
+                <div class="nav-links">
+                    <a href="home.html">HOME</a>
+                    <a href="global.html">GLOBAL</a>
+                    <a href="profile.html">PROFILE</a>
+                    <a href="leaderboard.html">LEADERBOARD</a>
+                    <a href="social.html">SOCIAL</a>
+                </div>
+                <div class="hamburger-menu">
+                    <button id="hamburger-button">☰</button>
+                    <div id="menu-links" class="menu-links">
+                        <a href="how_to.html">HOW TO</a>
+                        <a href="about.html">ABOUT</a>
+                        <a href="FAQ.html">FAQ</a>
+                        <a href="contact.html">CONTACT</a>
                     </div>
-                    <div class="hamburger-menu">
-                        <button id="hamburger-button">☰</button>
-                        <div id="menu-links" class="menu-links">
-                            <a href="how_to.html">HOW TO</a>
-                            <a href="about.html">ABOUT</a>
-                            <a href="FAQ.html">FAQ</a>
-                            <a href="contact.html">CONTACT</a>
-                        </div>
-                    </div>
-                </div>
-
-                <header>
-                    <h1>Leaderboard</h1>
-                </header>
-
-                <div class="leaderboard-container">
-                    <h2>Territories Owned</h2>
-                    <div id="extended-square-leaderboard"></div>
-                </div>
-                <div class="leaderboard-container">
-                    <h2>Most Marks</h2>
-                    <div id="entries-leaderboard"></div>
-                </div>
-
-                <div class="leaderboard-container">
-                    <h2>Unique Territories Marked</h2>
-                    <div id="square-leaderboard"></div>
                 </div>
             </div>
+
+            <header>
+                <h1>Leaderboard</h1>
+            </header>
+
+            <div class="leaderboard-container">
+                <h2>Largest Territories</h2>
+                <div id="voronoi-leaderboard"></div>
+            </div>
+
+            <div class="leaderboard-container">
+                <h2>Territories Owned</h2>
+                <div id="extended-square-leaderboard"></div>
+            </div>
+            <div class="leaderboard-container">
+                <h2>Most Marks</h2>
+                <div id="entries-leaderboard"></div>
+            </div>
+            <div class="leaderboard-container">
+                <h2>Unique Territories Marked</h2>
+                <div id="square-leaderboard"></div>
+            </div>
+        </div>
     </div>
+
     <script src="leaderboard.js"></script>
 </body>
 </html>
