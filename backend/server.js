@@ -280,6 +280,56 @@ app.get("/api/leaderboard", (req, res) => {
       res.json({ success: true, leaderboard: results.rows });
     });
   });
+
+  async function fetchAndRenderVoronoi() {
+    try {
+        const response = await fetch('https://myt-27ol.onrender.com/api/voronoi');
+        const data = await response.json();
+
+        if (data.success) {
+            renderVoronoi(data.voronoi);
+        } else {
+            console.error('Failed to fetch Voronoi data:', data.message);
+        }
+    } catch (error) {
+        console.error('Error fetching Voronoi data:', error);
+    }
+}
+
+// Function to render the Voronoi diagram using D3.js
+function renderVoronoi(voronoiData) {
+    const width = 800;
+    const height = 500;
+
+    const svg = d3.select('#voronoi-container')
+                  .append('svg')
+                  .attr('width', width)
+                  .attr('height', height);
+
+    const points = voronoiData.map(d => [d.x, d.y]); // Assuming the API returns x, y for each territory
+
+    // Create the Voronoi diagram
+    const voronoi = d3.voronoi()
+                     .extent([[0, 0], [width, height]]);
+
+    const diagram = voronoi(points);
+
+    svg.selectAll('path')
+       .data(diagram.polygons())
+       .enter().append('path')
+       .attr('d', d => `M${d.join('L')}Z`)
+       .attr('fill', 'none')
+       .attr('stroke', '#000');
+
+    // Optionally add circles for each point (user territories)
+    svg.selectAll('circle')
+       .data(points)
+       .enter().append('circle')
+       .attr('cx', d => d[0])
+       .attr('cy', d => d[1])
+       .attr('r', 5)
+       .attr('fill', 'blue');
+}
   
   app.get("/api/square-leaderboard", (req, res) => {
     const sql = `
