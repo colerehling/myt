@@ -281,56 +281,7 @@ app.get("/api/leaderboard", (req, res) => {
     });
   });
 
-  async function fetchAndRenderVoronoi() {
-    try {
-        const response = await fetch('https://myt-27ol.onrender.com/api/voronoi');
-        const data = await response.json();
-
-        if (data.success) {
-            renderVoronoi(data.voronoi);
-        } else {
-            console.error('Failed to fetch Voronoi data:', data.message);
-        }
-    } catch (error) {
-        console.error('Error fetching Voronoi data:', error);
-    }
-}
-
-// Function to render the Voronoi diagram using D3.js
-function renderVoronoi(voronoiData) {
-    const width = 800;
-    const height = 500;
-
-    const svg = d3.select('#voronoi-container')
-                  .append('svg')
-                  .attr('width', width)
-                  .attr('height', height);
-
-    const points = voronoiData.map(d => [d.x, d.y]); // Assuming the API returns x, y for each territory
-
-    // Create the Voronoi diagram
-    const voronoi = d3.voronoi()
-                     .extent([[0, 0], [width, height]]);
-
-    const diagram = voronoi(points);
-
-    svg.selectAll('path')
-       .data(diagram.polygons())
-       .enter().append('path')
-       .attr('d', d => `M${d.join('L')}Z`)
-       .attr('fill', 'none')
-       .attr('stroke', '#000');
-
-    // Optionally add circles for each point (user territories)
-    svg.selectAll('circle')
-       .data(points)
-       .enter().append('circle')
-       .attr('cx', d => d[0])
-       .attr('cy', d => d[1])
-       .attr('r', 5)
-       .attr('fill', 'blue');
-}
-
+// Endpoint for Voronoi data with territory area
 app.get("/api/voronoi", async (req, res) => {
   try {
     const result = await db.query(`
@@ -338,11 +289,16 @@ app.get("/api/voronoi", async (req, res) => {
       FROM square_ownership
     `);
 
+    // Calculate Voronoi regions and their areas
     const voronoiData = result.rows.map((row) => ({
       username: row.username,
-      x: row.longitude,  // Assuming longitude maps to x-coordinate
-      y: row.latitude,   // Assuming latitude maps to y-coordinate
+      x: row.longitude,  // Longitude as x-coordinate
+      y: row.latitude,   // Latitude as y-coordinate
+      territory_area: 0  // Placeholder for area, will calculate later
     }));
+
+    // Assuming you have a function to calculate the area for each user (e.g., using Shapely or similar)
+    await calculateTerritoryArea(voronoiData); // Make sure you implement the area calculation
 
     res.json({ success: true, voronoi: voronoiData });
   } catch (err) {
@@ -350,6 +306,19 @@ app.get("/api/voronoi", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
+
+// Function to calculate territory area
+async function calculateTerritoryArea(voronoiData) {
+  // Here you would calculate the Voronoi regions and their areas for each point (you can use existing logic or libraries)
+  // For example, using a Python script to calculate the area or using a spatial library
+  // Make sure to populate the 'territory_area' field for each user.
+
+  // Here's a basic placeholder example to simulate area calculation (in square miles):
+  voronoiData.forEach(user => {
+    user.territory_area = Math.random() * 100000;  // Simulating area calculation
+  });
+}
+
 
   
   app.get("/api/square-leaderboard", (req, res) => {
