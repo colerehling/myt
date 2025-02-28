@@ -280,46 +280,6 @@ app.get("/api/leaderboard", (req, res) => {
       res.json({ success: true, leaderboard: results.rows });
     });
   });
-
-// Endpoint for Voronoi data with territory area
-app.get("/api/voronoi", async (req, res) => {
-  try {
-    const result = await db.query(`
-      SELECT username, latitude, longitude
-      FROM square_ownership
-    `);
-
-    // Calculate Voronoi regions and their areas
-    const voronoiData = result.rows.map((row) => ({
-      username: row.username,
-      x: row.longitude,  // Longitude as x-coordinate
-      y: row.latitude,   // Latitude as y-coordinate
-      territory_area: 0  // Placeholder for area, will calculate later
-    }));
-
-    // Assuming you have a function to calculate the area for each user (e.g., using Shapely or similar)
-    await calculateTerritoryArea(voronoiData); // Make sure you implement the area calculation
-
-    res.json({ success: true, voronoi: voronoiData });
-  } catch (err) {
-    console.error("Error fetching Voronoi data:", err.message);
-    res.status(500).json({ success: false, message: "Internal server error." });
-  }
-});
-
-// Function to calculate territory area
-async function calculateTerritoryArea(voronoiData) {
-  // Here you would calculate the Voronoi regions and their areas for each point (you can use existing logic or libraries)
-  // For example, using a Python script to calculate the area or using a spatial library
-  // Make sure to populate the 'territory_area' field for each user.
-
-  // Here's a basic placeholder example to simulate area calculation (in square miles):
-  voronoiData.forEach(user => {
-    user.territory_area = Math.random() * 100000;  // Simulating area calculation
-  });
-}
-
-
   
   app.get("/api/square-leaderboard", (req, res) => {
     const sql = `
@@ -355,6 +315,22 @@ async function calculateTerritoryArea(voronoiData) {
         console.error("Database error:", err.message);
         res.status(500).json({ success: false, message: "Internal server error." });
     }
+});
+
+app.get("/api/voronoi-leaderboard", (req, res) => {
+  const sql = `
+      SELECT username, area
+      FROM user_areas
+      ORDER BY area DESC
+      LIMIT 10
+  `;
+  db.query(sql, (err, results) => {
+      if (err) {
+          console.error("Database error:", err.message);
+          return res.status(500).json({ success: false, message: "Internal server error." });
+      }
+      res.json({ success: true, leaderboard: results.rows });
+  });
 });
 
 app.get("/api/recent-entries", async (req, res) => {
