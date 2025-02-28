@@ -88,19 +88,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const input = document.getElementById("usernameOrEmail").value.trim(); // Keep input as entered
+        const input = document.getElementById("usernameOrEmail").value.trim();
         const password = document.getElementById("password").value;
 
         spinnerOverlay.style.display = 'flex';
-
-        const isEmail = input.includes('@') && input.includes('.'); 
 
         try {
             const response = await fetch(`${API_BASE_URL}/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    [isEmail ? "email" : "username"]: input, // Keep case-sensitive for username
+                    username: input,
                     password
                 }),
             });
@@ -111,7 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            localStorage.setItem('currentUser', input);
+            const data = await response.json();
+            localStorage.setItem('currentUser', data.username);
             window.location.href = 'home.html';
         } catch (err) {
             console.error("Error during login:", err);

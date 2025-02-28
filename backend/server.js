@@ -155,14 +155,26 @@ app.get("/api/users/count", async (req, res) => {
 });
 
 app.get("/api/entries", async (req, res) => {
-  const { username } = req.query;
+  const { username: inputUsername } = req.query;
   let sql = `
     SELECT DISTINCT ON (square_id) *
     FROM map_entries
     ORDER BY square_id, timestamp DESC
   `;
   const values = [];
-  if (username) {
+  let username = inputUsername;
+
+  if (inputUsername) {
+    try {
+      const userCheck = await db.query("SELECT username FROM users WHERE LOWER(username) = LOWER($1)", [inputUsername]);
+      if (userCheck.rows.length === 0) {
+        return res.status(400).json({ success: false, message: "User not found." });
+      }
+      username = userCheck.rows[0].username;
+    } catch (err) {
+      console.error("Error resolving username:", err.message);
+      return res.status(500).json({ success: false, message: "Internal server error." });
+    }
     sql = `
       SELECT DISTINCT ON (square_id) *, (SELECT COUNT(*) FROM map_entries WHERE username = $1) as total_entries
       FROM map_entries
@@ -182,6 +194,17 @@ app.get("/api/entries", async (req, res) => {
 
 app.post("/api/entries", async (req, res) => {
   const { username, text, lat, lng } = req.body;
+
+  try {
+    const userCheck = await db.query("SELECT username FROM users WHERE LOWER(username) = LOWER($1)", [username]);
+    if (userCheck.rows.length === 0) {
+      return res.status(400).json({ success: false, message: "User not found." });
+    }
+    username = userCheck.rows[0].username;
+  } catch (err) {
+    console.error("Error resolving username:", err.message);
+    return res.status(500).json({ success: false, message: "Internal server error." });
+  }
 
   const { state, country } = await getLocationFromCoords(lat, lng);
   const squareSize = 0.01;
@@ -403,86 +426,69 @@ app.get("/api/username-change-info", async (req, res) => {
 });
 
 app.post("/api/change-username", async (req, res) => {
-  const { currentUsername, newUsername } = req.body;
+  const { currentUsername: inputCurrentUsername, newUsername } = req.body;
 
-  console.log("Received request to change username:", { currentUsername, newUsername });
-
-  // Validate input
-  if (!currentUsername || !newUsername) {
-      console.error("Validation failed: Both current and new usernames are required.");
-      return res.status(400).json({ success: false, message: "Both current and new usernames are required." });
-  }
-
-  if (newUsername.length < 4 || newUsername.length > 30) {
-      console.error("Validation failed: Username must be between 4 and 30 characters long.");
-      return res.status(400).json({ success: false, message: "Username must be between 4 and 30 characters long." });
-  }
-
-  if (!/^[a-zA-Z0-9_]{4,30}$/.test(newUsername)) {
-      console.error("Validation failed: Username must contain only letters, numbers, and underscores.");
-      return res.status(400).json({ success: false, message: "Username must contain only letters, numbers, and underscores." });
+  if (!inputCurrentUsername || !newUsername) {
+    return res.status(400).json({ success: false, message: "Both current and new usernames are required." });
   }
 
   try {
-      // Check if the new username already exists
-      console.log("Checking if new username is available...");
-      const usernameCheck = await db.query("SELECT * FROM users WHERE LOWER(username) = LOWER($1)", [newUsername]);
-      if (usernameCheck.rows.length > 0) {
-          console.error("Username already taken:", newUsername);
-          return res.status(400).json({ success: false, message: "Username already taken." });
-      }
+    // Resolve current username case
+    const userCheck = await db.query(
+      "SELECT id, username, last_username_change FROM users WHERE LOWER(username) = LOWER($1)",
+      [inputCurrentUsername]
+    );
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found." });
+    }
+    const currentUser = userCheck.rows[0];
+    const currentUsername = currentUser.username;
+    const userId = currentUser.id;
+    const lastChangeDate = currentUser.last_username_change;
 
-      // Fetch last username change date
-      console.log("Fetching last username change date...");
-      const userQuery = await db.query("SELECT id, last_username_change FROM users WHERE username = $1", [currentUsername]);
-      if (userQuery.rows.length === 0) {
-          console.error("User not found:", currentUsername);
-          return res.status(404).json({ success: false, message: "User not found." });
-      }
+    // Check new username availability
+    const newUserCheck = await db.query(
+      "SELECT * FROM users WHERE LOWER(username) = LOWER($1)",
+      [newUsername]
+    );
+    if (newUserCheck.rows.length > 0) {
+      return res.status(400).json({ success: false, message: "Username already taken." });
+    }
 
-      const userId = userQuery.rows[0].id;
-      const lastChangeDate = userQuery.rows[0].last_username_change;
-      const now = new Date();
-      const daysSinceLastChange = lastChangeDate ? Math.floor((now - new Date(lastChangeDate)) / (1000 * 60 * 60 * 24)) : 31;
+    // Check cooldown period
+    const now = new Date();
+    const daysSinceLastChange = lastChangeDate ? 
+      Math.floor((now - new Date(lastChangeDate)) / (1000 * 60 * 60 * 24)) : 31;
+    if (daysSinceLastChange < 30) {
+      return res.status(403).json({ success: false, message: `You can change your username again in ${30 - daysSinceLastChange} day(s).` });
+    }
 
-      if (daysSinceLastChange < 30) {
-          console.error("Username change cooldown active:", daysSinceLastChange, "days since last change.");
-          return res.status(403).json({ success: false, message: `You can change your username again in ${30 - daysSinceLastChange} day(s).` });
-      }
+    // Transaction
+    await db.query("BEGIN");
 
-      // Begin transaction
-      console.log("Starting transaction...");
-      await db.query("BEGIN");
+    await db.query(
+      "UPDATE users SET username = $1, last_username_change = $2 WHERE id = $3",
+      [newUsername, now, userId]
+    );
 
-      // Update username in `users` table
-      console.log("Updating username in users table...");
-      await db.query("UPDATE users SET username = $1, last_username_change = $2 WHERE username = $3", [newUsername, now, currentUsername]);
+    await db.query(
+      "INSERT INTO username_history (user_id, old_username, new_username) VALUES ($1, $2, $3)",
+      [userId, currentUsername, newUsername]
+    );
 
-      // Insert into `username_history` table
-      console.log("Logging username change in history...");
-      await db.query(
-          "INSERT INTO username_history (user_id, old_username, new_username) VALUES ($1, $2, $3)",
-          [userId, currentUsername, newUsername]
-      );
+    // Update all username references
+    await db.query("UPDATE map_entries SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
+    await db.query("UPDATE square_ownership SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
+    await db.query("UPDATE invites SET inviter = $1 WHERE inviter = $2", [newUsername, currentUsername]);
+    await db.query("UPDATE invites SET invitee = $1 WHERE invitee = $2", [newUsername, currentUsername]);
 
-      // Update username in related tables
-      console.log("Updating username in related tables...");
-      await db.query("UPDATE map_entries SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
-      await db.query("UPDATE square_ownership SET username = $1 WHERE username = $2", [newUsername, currentUsername]);
-      await db.query("UPDATE invites SET inviter = $1 WHERE inviter = $2", [newUsername, currentUsername]);
-      await db.query("UPDATE invites SET invitee = $1 WHERE invitee = $2", [newUsername, currentUsername]);
+    await db.query("COMMIT");
 
-      // Commit transaction
-      console.log("Committing transaction...");
-      await db.query("COMMIT");
-
-      console.log(`Username updated from ${currentUsername} to ${newUsername}.`);
-      res.json({ success: true, message: "Username updated successfully." });
+    res.json({ success: true, message: "Username updated successfully." });
   } catch (err) {
-      // Rollback transaction in case of error
-      console.error("Error during username change:", err.message, err.stack);
-      await db.query("ROLLBACK");
-      res.status(500).json({ success: false, message: "Internal server error. Please try again later." });
+    await db.query("ROLLBACK");
+    console.error("Error during username change:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
 
