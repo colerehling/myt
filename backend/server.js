@@ -330,6 +330,27 @@ function renderVoronoi(voronoiData) {
        .attr('r', 5)
        .attr('fill', 'blue');
 }
+
+app.get("/api/voronoi", async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT username, latitude, longitude
+      FROM square_ownership
+    `);
+
+    const voronoiData = result.rows.map((row) => ({
+      username: row.username,
+      x: row.longitude,  // Assuming longitude maps to x-coordinate
+      y: row.latitude,   // Assuming latitude maps to y-coordinate
+    }));
+
+    res.json({ success: true, voronoi: voronoiData });
+  } catch (err) {
+    console.error("Error fetching Voronoi data:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+
   
   app.get("/api/square-leaderboard", (req, res) => {
     const sql = `
