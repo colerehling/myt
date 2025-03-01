@@ -5,11 +5,54 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchVoronoiLeaderboard(); // Add this line
 });
 
+// Add event listener for the "Monthly Challenge" button
+const toggleLeaderboardButton = document.getElementById('toggle-leaderboard-button');
+    if (toggleLeaderboardButton) {
+        let isMonthlyView = false; // Track the current view
+
+        toggleLeaderboardButton.addEventListener('click', () => {
+            if (isMonthlyView) {
+                // Switch to "Show All Leaderboards" mode
+                document.querySelectorAll('.leaderboard-container').forEach(container => {
+                    container.style.display = 'block'; // Show all leaderboards
+                });
+                document.getElementById('monthly-leaderboard').style.display = 'none'; // Hide monthly leaderboard
+                toggleLeaderboardButton.textContent = 'Monthly Leaderboard'; // Update button text
+            } else {
+                // Switch to "Monthly Leaderboard" mode
+                document.querySelectorAll('.leaderboard-container').forEach(container => {
+                    container.style.display = 'none'; // Hide all leaderboards
+                });
+                document.getElementById('monthly-leaderboard').style.display = 'block'; // Show monthly leaderboard
+                fetchMonthlyLeaderboard(); // Fetch monthly leaderboard data
+                toggleLeaderboardButton.textContent = 'All Leaderboards'; // Update button text
+            }
+
+            isMonthlyView = !isMonthlyView; // Toggle the state
+        });
+    }
+
+
 // Add event listener for the "Show All" button
 const showAllButton = document.getElementById('show-all-button');
 if (showAllButton) {
     showAllButton.addEventListener('click', fetchAllVoronoiLeaderboard);
 };
+
+function fetchMonthlyLeaderboard() {
+    fetch('https://myt-27ol.onrender.com/api/monthly-leaderboard')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayLeaderboard(data.leaderboard, 'monthly-leaderboard-content');
+            } else {
+                console.error('Failed to fetch monthly leaderboard:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching monthly leaderboard:', error);
+        });
+}
 
 function fetchLeaderboard() {
     fetch('https://myt-27ol.onrender.com/api/leaderboard')
@@ -93,15 +136,21 @@ function displayLeaderboard(leaderboard, sectionId) {
 
     const table = document.createElement('table');
     table.className = 'leaderboard-table';
-    
-    // Determine column header
-    let columnHeader;
+
+    // Determine column header and value key based on the section
+    let columnHeader, valueKey;
     if (sectionId === 'entries-leaderboard') {
         columnHeader = 'Entries';
+        valueKey = 'entry_count';
     } else if (sectionId === 'voronoi-leaderboard') {
         columnHeader = 'Area (sq mi)';
+        valueKey = 'area';
+    } else if (sectionId === 'monthly-leaderboard-content') {
+        columnHeader = 'Marks';
+        valueKey = 'entry_count'; // Assuming the API returns 'entry_count' for monthly leaderboard
     } else {
         columnHeader = 'Territory Count';
+        valueKey = 'territory_count';
     }
 
     table.innerHTML = `
@@ -114,17 +163,21 @@ function displayLeaderboard(leaderboard, sectionId) {
 
     leaderboard.forEach((user, index) => {
         const row = table.insertRow();
-        let value;
-        
-        if (sectionId === 'entries-leaderboard') {
-            value = user.entry_count.toLocaleString(); // Format entries with commas
-        } else if (sectionId === 'voronoi-leaderboard') {
-            value = parseFloat(user.area).toLocaleString(undefined, {
+        let value = user[valueKey]; // Use the dynamic key to access the value
+
+        if (value === undefined) {
+            console.error(`Undefined value for key '${valueKey}' in user:`, user);
+            value = 0; // Default to 0 if the value is undefined
+        }
+
+        // Format the value based on the section
+        if (sectionId === 'voronoi-leaderboard') {
+            value = parseFloat(value).toLocaleString(undefined, {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
-            }); // Format area with commas and 2 decimal places
+            });
         } else {
-            value = user.territory_count.toLocaleString(); // Format territory count with commas
+            value = value.toLocaleString(); // Format numbers with commas
         }
 
         row.innerHTML = `

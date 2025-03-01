@@ -4,8 +4,14 @@ import pandas as pd
 from scipy.spatial import Voronoi
 from shapely.geometry import Polygon, box
 import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from dotenv import load_dotenv
+import logging
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
+# Load environment variables
 load_dotenv(dotenv_path='../backend/.env')
 
 # Constants
@@ -70,84 +76,93 @@ def voronoi_finite_polygons_2d(vor, radius=None):
 
     return new_regions, np.asarray(new_vertices)
 
-# Fetch data from database
-try:
-    conn = psycopg2.connect(
-        dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
-    )
-    df = pd.read_sql("SELECT username, latitude, longitude FROM square_ownership;", conn)
-    conn.close()
-except Exception as e:
-    print("Error fetching data:", e)
-    df = pd.DataFrame(columns=["username", "latitude", "longitude"])
-
-if df.empty:
-    print("No data found.")
-else:
-    points = df[["longitude", "latitude"]].values
-    vor = Voronoi(points)
-    regions, vertices = voronoi_finite_polygons_2d(vor, radius=360)
-    world_bounds = box(-180, -90, 180, 90)
-    user_areas = {}
-
-    for idx, user in df.iterrows():
-        if idx >= len(regions):
-            print(f"Skipping user {user['username']} - no region")
-            continue
-            
-        region = regions[idx]
-        polygon_vertices = vertices[region]
-
-        if len(polygon_vertices) < 3:
-            continue
-
-        try:
-            voronoi_poly = Polygon(polygon_vertices)
-            clipped_poly = voronoi_poly.intersection(world_bounds)
-            if clipped_poly.is_empty:
-                continue
-
-            area_deg2 = clipped_poly.area
-            centroid = clipped_poly.centroid
-            avg_lat_rad = np.radians(centroid.y)
-            conversion = (MILES_PER_DEGREE_LAT ** 2) * np.cos(avg_lat_rad)
-            area_sq_miles = area_deg2 * conversion
-
-            username = user["username"]
-            user_areas[username] = user_areas.get(username, 0) + area_sq_miles
-        except Exception as e:
-            print(f"Error processing user {user['username']}: {e}")
-
-    for user, area in sorted(user_areas.items(), key=lambda x: -x[1]):
-        print(f"{user}: {area:,.0f} mi²")
-
-
-if df.empty:
-    print("No data found.")
-else:
-    # ... [keep existing Voronoi calculation code] ...
-
-    # After calculating user_areas, update database
+def calculate_and_update_voronoi():
+    """Calculate Voronoi areas and update the database."""
     try:
         conn = psycopg2.connect(
             dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
         )
+        df = pd.read_sql("SELECT username, latitude, longitude FROM square_ownership;", conn)
+
+        if df.empty:
+            logging.warning("No data found in square_ownership table.")
+            return
+
+        points = df[["longitude", "latitude"]].values
+        vor = Voronoi(points)
+        regions, vertices = voronoi_finite_polygons_2d(vor, radius=360)
+        world_bounds = box(-180, -90, 180, 90)
+        user_areas = {}
+
+        for idx, user in df.iterrows():
+            if idx >= len(regions):
+                logging.warning(f"Skipping user {user['username']} - no region")
+                continue
+
+            region = regions[idx]
+            polygon_vertices = vertices[region]
+
+            if len(polygon_vertices) < 3:
+                continue
+
+            try:
+                voronoi_poly = Polygon(polygon_vertices)
+                clipped_poly = voronoi_poly.intersection(world_bounds)
+                if clipped_poly.is_empty:
+                    continue
+
+                area_deg2 = clipped_poly.area
+                centroid = clipped_poly.centroid
+                avg_lat_rad = np.radians(centroid.y)
+                conversion = (MILES_PER_DEGREE_LAT ** 2) * np.cos(avg_lat_rad)
+                area_sq_miles = area_deg2 * conversion
+
+                username = user["username"]
+                user_areas[username] = user_areas.get(username, 0) + area_sq_miles
+            except Exception as e:
+                logging.error(f"Error processing user {user['username']}: {e}")
+
+        # Update user_areas table
         cur = conn.cursor()
-        
-        # Clear existing data
         cur.execute("DELETE FROM user_areas;")
-        
-        # Insert new data
         for user, area in user_areas.items():
-            # Convert NumPy float to Python float
             area_float = float(area)
             cur.execute(
                 "INSERT INTO user_areas (username, area) VALUES (%s, %s) ON CONFLICT (username) DO UPDATE SET area = EXCLUDED.area;",
                 (user, area_float)
             )
-        
         conn.commit()
         conn.close()
-        print("Successfully updated user areas in database")
+        logging.info("Successfully updated user areas in database")
     except Exception as e:
-        print("Error updating database:", e)      
+        logging.error("Error updating database:", exc_info=True)
+
+def listen_for_updates():
+    """Listen for PostgreSQL notifications and trigger Voronoi calculations."""
+    try:
+        conn = psycopg2.connect(
+            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
+        )
+        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+        cur = conn.cursor()
+        cur.execute("LISTEN square_ownership_updated;")
+        logging.info("Listening for updates to square_ownership table...")
+
+        while True:
+            conn.poll()
+            while conn.notifies:
+                notify = conn.notifies.pop(0)
+                logging.info(f"Received notification: {notify.payload}")
+                calculate_and_update_voronoi()
+    except Exception as e:
+        logging.error("Error listening for updates:", exc_info=True)
+    finally:
+        if conn:
+            conn.close()
+
+if __name__ == "__main__":
+    # Run initial calculation
+    calculate_and_update_voronoi()
+
+    # Start listening for updates
+    listen_for_updates()    
