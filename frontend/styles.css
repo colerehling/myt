@@ -71,7 +71,8 @@ input, textarea, button {
 }
 
 /* Button Styles */
-button {
+button, .show-all-button
+{
     background-color: #fdc43f;
     color: #fff;
     border: none;
@@ -80,7 +81,7 @@ button {
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.15);
 }
 
-button:hover {
+button:hover, .show-all-button:hover {
     background-color: #f7b21e;
     box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
     transform: translateY(-2px);
@@ -450,19 +451,4 @@ label {
 
 .username-change-info {
     font-size: 0.8em; /* Adjust the size as needed */
-}
-
-.expand-button {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.expand-button:hover {
-    background-color: #45a049;
 }

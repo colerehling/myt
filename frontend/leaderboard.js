@@ -5,6 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchVoronoiLeaderboard(); // Add this line
 });
 
+// Add event listener for the "Show All" button
+const showAllButton = document.getElementById('show-all-button');
+if (showAllButton) {
+    showAllButton.addEventListener('click', fetchAllVoronoiLeaderboard);
+};
+
 function fetchLeaderboard() {
     fetch('https://myt-27ol.onrender.com/api/leaderboard')
         .then(response => response.json())
@@ -65,6 +71,22 @@ function fetchVoronoiLeaderboard() {
         });
 }
 
+// Function to fetch all Voronoi leaderboard entries
+function fetchAllVoronoiLeaderboard() {
+    fetch('https://myt-27ol.onrender.com/api/voronoi-leaderboard?limit=all') // Add a query parameter to fetch all entries
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayLeaderboard(data.leaderboard, 'voronoi-leaderboard');
+            } else {
+                console.error('Failed to fetch all Voronoi leaderboard entries:', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching all Voronoi leaderboard entries:', error);
+        });
+}
+
 function displayLeaderboard(leaderboard, sectionId) {
     const leaderboardElement = document.getElementById(sectionId);
     leaderboardElement.innerHTML = ''; // Clear previous content
@@ -95,11 +117,14 @@ function displayLeaderboard(leaderboard, sectionId) {
         let value;
         
         if (sectionId === 'entries-leaderboard') {
-            value = user.entry_count;
+            value = user.entry_count.toLocaleString(); // Format entries with commas
         } else if (sectionId === 'voronoi-leaderboard') {
-            value = user.area.toLocaleString();
+            value = parseFloat(user.area).toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }); // Format area with commas and 2 decimal places
         } else {
-            value = user.territory_count;
+            value = user.territory_count.toLocaleString(); // Format territory count with commas
         }
 
         row.innerHTML = `
@@ -110,7 +135,7 @@ function displayLeaderboard(leaderboard, sectionId) {
     });
 
     leaderboardElement.appendChild(table);
-} 
+}
 
 // JavaScript to toggle the hamburger menu
 document.addEventListener("DOMContentLoaded", () => {
