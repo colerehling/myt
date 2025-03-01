@@ -392,11 +392,12 @@ app.get("/api/leaderboard", (req, res) => {
 });
 
 app.get("/api/voronoi-leaderboard", (req, res) => {
+  const limit = req.query.limit === 'all' ? null : 10; // Fetch all entries if limit=all
   const sql = `
       SELECT username, area
       FROM user_areas
       ORDER BY area DESC
-      LIMIT 10
+      ${limit ? `LIMIT ${limit}` : ''}
   `;
   db.query(sql, (err, results) => {
       if (err) {
