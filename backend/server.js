@@ -408,6 +408,28 @@ app.get("/api/voronoi-leaderboard", (req, res) => {
   });
 });
 
+app.get("/api/monthly-leaderboard", async (req, res) => {
+  const month = 'March'; // You can dynamically set this based on the current month if needed
+  const year = new Date().getFullYear(); // Get the current year
+
+  try {
+    const result = await db.query(`
+      SELECT username, COUNT(*) as entry_count
+      FROM map_entries
+      WHERE EXTRACT(MONTH FROM timestamp) = EXTRACT(MONTH FROM TO_DATE($1, 'Month'))
+        AND EXTRACT(YEAR FROM timestamp) = $2
+      GROUP BY username
+      ORDER BY entry_count DESC
+      LIMIT 10
+    `, [month, year]);
+
+    res.json({ success: true, leaderboard: result.rows });
+  } catch (err) {
+    console.error("Database error:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+
 app.get("/api/recent-entries", async (req, res) => {
   try {
       const result = await db.query(`
