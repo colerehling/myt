@@ -143,6 +143,16 @@ async function getLocationFromCoords(latitude, longitude) {
   }
 }
 
+app.get("/api/users/count", async (req, res) => {
+  try {
+    const result = await db.query("SELECT COUNT(*) FROM users");
+    res.json({ userCount: result.rows[0].count });
+  } catch (err) {
+    console.error("Database error:", err.message);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
+});
+
 // Entries API with case-insensitive username handling
 app.post("/api/entries", async (req, res) => {
   let { username, text, lat, lng } = req.body;
