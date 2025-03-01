@@ -150,4 +150,4 @@ else:
         conn.close()
         print("Successfully updated user areas in database")
     except Exception as e:
-        print("Error updating database:", e)       
+        print("Error updating database:", e)      

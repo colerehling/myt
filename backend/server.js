@@ -126,7 +126,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-
+// Helper function to get location from coordinates
 async function getLocationFromCoords(latitude, longitude) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
   try {
@@ -134,26 +134,66 @@ async function getLocationFromCoords(latitude, longitude) {
     const data = await response.json();
 
     const state = data.address?.state || "";
-    const country = data.address?.country || "Unknown"; // Get country as well
+    const country = data.address?.country || "Unknown";
 
     return { state, country };
   } catch (error) {
     console.error("Error fetching state and country:", error);
-    return { state: "Unknown", country: "Unknown" }; // Default values
+    return { state: "Unknown", country: "Unknown" };
   }
 }
 
+// Entries API with case-insensitive username handling
+app.post("/api/entries", async (req, res) => {
+  let { username, text, lat, lng } = req.body;
 
-app.get("/api/users/count", async (req, res) => {
+  // Validate input
+  if (!username || !text || !lat || !lng) {
+    return res.status(400).json({ success: false, message: "All fields are required." });
+  }
+
+  // Resolve username to correct case
   try {
-    const result = await db.query("SELECT COUNT(*) FROM users");
-    res.json({ userCount: result.rows[0].count });
+    const userCheck = await db.query("SELECT username FROM users WHERE LOWER(username) = LOWER($1)", [username]);
+    if (userCheck.rows.length === 0) {
+      return res.status(400).json({ success: false, message: "User not found." });
+    }
+    username = userCheck.rows[0].username;
+  } catch (err) {
+    console.error("Error resolving username:", err.message);
+    return res.status(500).json({ success: false, message: "Internal server error." });
+  }
+
+  try {
+    const { state, country } = await getLocationFromCoords(lat, lng);
+    const squareSize = 0.01;
+    const squareId = `${Math.floor(lat / squareSize)}_${Math.floor(lng / squareSize)}`;
+
+    // Insert or update square ownership
+    await db.query(
+      `INSERT INTO square_ownership (username, square_id, latitude, longitude, timestamp)
+       VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+       ON CONFLICT (square_id, username) DO UPDATE SET
+         latitude = EXCLUDED.latitude,
+         longitude = EXCLUDED.longitude,
+         timestamp = CURRENT_TIMESTAMP`,
+      [username, squareId, lat, lng]
+    );
+
+    // Insert new map entry
+    await db.query(
+      "INSERT INTO map_entries (username, square_id, latitude, longitude, text, state, country) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+      [username, squareId, lat, lng, text, state, country]
+    );
+
+    res.json({ success: true });
   } catch (err) {
     console.error("Database error:", err.message);
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 });
 
+// Get entries with case-insensitive username handling
 app.get("/api/entries", async (req, res) => {
   const { username: inputUsername } = req.query;
   let sql = `
@@ -175,6 +215,7 @@ app.get("/api/entries", async (req, res) => {
       console.error("Error resolving username:", err.message);
       return res.status(500).json({ success: false, message: "Internal server error." });
     }
+
     sql = `
       SELECT DISTINCT ON (square_id) *, (SELECT COUNT(*) FROM map_entries WHERE username = $1) as total_entries
       FROM map_entries

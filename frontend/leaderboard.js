@@ -110,7 +110,7 @@ function displayLeaderboard(leaderboard, sectionId) {
     });
 
     leaderboardElement.appendChild(table);
-}
+} 
 
 // JavaScript to toggle the hamburger menu
 document.addEventListener("DOMContentLoaded", () => {
