@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.getElementById("login-form");
-    const registerForm = document.getElementById("register-form");
+    const registerContainer = document.getElementById("register-container"); // Updated to target the container
     const showRegister = document.getElementById("show-register");
     const showLogin = document.getElementById("show-login");
     const spinnerOverlay = document.getElementById("spinner-overlay");
@@ -8,11 +8,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     showRegister.addEventListener("click", () => {
         loginForm.style.display = "none";
-        registerForm.style.display = "block";
+        registerContainer.style.display = "block"; // Toggle the container, not the form
     });
 
     showLogin.addEventListener("click", () => {
-        registerForm.style.display = "none";
+        registerContainer.style.display = "none"; // Toggle the container, not the form
         loginForm.style.display = "block";
     });
 
@@ -119,5 +119,4 @@ document.addEventListener("DOMContentLoaded", () => {
             spinnerOverlay.style.display = 'none';
         }
     });
-
 });

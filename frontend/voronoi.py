@@ -4,9 +4,10 @@ import pandas as pd
 from scipy.spatial import Voronoi
 from shapely.geometry import Polygon, box
 import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from dotenv import load_dotenv
 import logging
+import time
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -16,6 +17,7 @@ load_dotenv(dotenv_path='../backend/.env')
 
 # Constants
 MILES_PER_DEGREE_LAT = 69  # 1° latitude ≈ 69 miles
+UPDATE_INTERVAL = 30 * 60  # 30 minutes in seconds
 
 # Database connection settings
 DB_NAME = os.getenv("DB_NAME")
@@ -137,32 +139,14 @@ def calculate_and_update_voronoi():
     except Exception as e:
         logging.error("Error updating database:", exc_info=True)
 
-def listen_for_updates():
-    """Listen for PostgreSQL notifications and trigger Voronoi calculations."""
-    try:
-        conn = psycopg2.connect(
-            dbname=DB_NAME, user=DB_USER, password=DB_PASSWORD, host=DB_HOST, port=DB_PORT
-        )
-        conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-        cur = conn.cursor()
-        cur.execute("LISTEN square_ownership_updated;")
-        logging.info("Listening for updates to square_ownership table...")
-
-        while True:
-            conn.poll()
-            while conn.notifies:
-                notify = conn.notifies.pop(0)
-                logging.info(f"Received notification: {notify.payload}")
-                calculate_and_update_voronoi()
-    except Exception as e:
-        logging.error("Error listening for updates:", exc_info=True)
-    finally:
-        if conn:
-            conn.close()
+def run_scheduler():
+    """Run the Voronoi calculation every 30 minutes."""
+    while True:
+        logging.info("Starting Voronoi calculation...")
+        calculate_and_update_voronoi()
+        logging.info(f"Next update in {UPDATE_INTERVAL // 60} minutes.")
+        time.sleep(UPDATE_INTERVAL)
 
 if __name__ == "__main__":
-    # Run initial calculation
-    calculate_and_update_voronoi()
-
-    # Start listening for updates
-    listen_for_updates()    
+    # Run the scheduler
+    run_scheduler()  
